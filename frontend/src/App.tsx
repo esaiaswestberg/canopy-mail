@@ -6,17 +6,25 @@ import EmailList from './components/email-list/EmailList'
 import EmailReader from './components/email-reader/EmailReader'
 import ContextMenu from './components/context-menu/ContextMenu'
 import SettingsModal from './components/settings/SettingsModal'
-import { mockEmails, mockEmailDetail, mockFolders } from './data/mockData'
-import { Account, EmailDetail } from './types/mail'
+import { Account, EmailDetail, EmailListItem, Folder } from './types/mail'
 import { ContextMenuContext, ContextMenuState, ContextMenuItem } from './context/ContextMenuContext'
-import { GetAccounts, UpdateAccount, DeleteAccount } from '../wailsjs/go/main/App'
+import { GetAccounts, UpdateAccount, DeleteAccount, GetFolders, GetEmails, GetEmailDetail } from '../wailsjs/go/main/App'
 import { main as WailsModels } from '../wailsjs/go/models'
 
 function App() {
     const [accounts, setAccounts] = useState<Account[]>([])
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
     const [selectedFolderId, setSelectedFolderId] = useState('inbox')
-    const [selectedEmailId, setSelectedEmailId] = useState<string | null>(mockEmails[0].id)
+    const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null)
+    
+    const [folders, setFolders] = useState<Folder[]>([])
+    const [emails, setEmails] = useState<EmailListItem[]>([])
+    const [selectedEmailDetail, setSelectedEmailDetail] = useState<EmailDetail | null>(null)
+
+    const [loadingFolders, setLoadingFolders] = useState(false)
+    const [loadingEmails, setLoadingEmails] = useState(false)
+    const [loadingDetail, setLoadingDetail] = useState(false)
+
     const [menuState, setMenuState] = useState<ContextMenuState | null>(null)
     const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -33,24 +41,51 @@ function App() {
 
     const activeAccount = accounts.find(a => a.id === selectedAccountId) ?? accounts[0] ?? null
 
-    const filteredEmails = useMemo(
-        () => mockEmails.filter(e => e.folderId === selectedFolderId && e.accountId === selectedAccountId),
-        [selectedFolderId, selectedAccountId]
-    )
-
-    const activeFolder = mockFolders.find(f => f.id === selectedFolderId)!
-
-    const selectedEmail: EmailDetail | null = useMemo(() => {
-        if (!selectedEmailId || !activeAccount) return null
-        if (selectedEmailId === mockEmailDetail.id) return mockEmailDetail
-        const found = mockEmails.find(e => e.id === selectedEmailId)
-        if (!found) return null
-        return {
-            ...found,
-            bodyHtml: '<p>No preview available.</p>',
-            recipients: [{ name: activeAccount.displayName, email: activeAccount.email }],
+    useEffect(() => {
+        if (!activeAccount) {
+            setFolders([])
+            return
         }
-    }, [selectedEmailId, activeAccount])
+        setLoadingFolders(true)
+        GetFolders(activeAccount.id).then(res => {
+            const list = (res ?? []) as Folder[]
+            setFolders(list)
+            if (list.length > 0) {
+                const hasSelected = list.some(f => f.id === selectedFolderId)
+                if (!hasSelected) {
+                    const inbox = list.find(f => f.id.toLowerCase() === 'inbox') || list[0]
+                    setSelectedFolderId(inbox.id)
+                }
+            }
+        }).catch(console.error).finally(() => setLoadingFolders(false))
+    }, [activeAccount?.id])
+
+    useEffect(() => {
+        if (!activeAccount || !selectedFolderId) {
+            setEmails([])
+            return
+        }
+        setLoadingEmails(true)
+        GetEmails(activeAccount.id, selectedFolderId).then(res => {
+            setEmails((res ?? []) as EmailListItem[])
+        }).catch(console.error).finally(() => setLoadingEmails(false))
+    }, [activeAccount?.id, selectedFolderId])
+
+    useEffect(() => {
+        if (!activeAccount || !selectedFolderId || !selectedEmailId) {
+            setSelectedEmailDetail(null)
+            return
+        }
+        const emailListItem = emails.find(e => e.id === selectedEmailId)
+        if (!emailListItem) return
+
+        setLoadingDetail(true)
+        GetEmailDetail(activeAccount.id, selectedFolderId, emailListItem.uid || parseInt(emailListItem.id)).then(res => {
+            setSelectedEmailDetail(res as EmailDetail)
+        }).catch(console.error).finally(() => setLoadingDetail(false))
+    }, [activeAccount?.id, selectedFolderId, selectedEmailId, emails])
+
+    const activeFolder = folders.find(f => f.id === selectedFolderId) || { id: selectedFolderId, label: selectedFolderId, icon: 'inbox', isSystem: false }
 
     function handleSelectFolder(id: string) {
         setSelectedFolderId(id)
@@ -120,18 +155,18 @@ function App() {
                             accounts={accounts}
                             activeAccount={activeAccount}
                             onSelectAccount={handleSelectAccount}
-                            folders={mockFolders}
+                            folders={folders}
                             selectedFolderId={selectedFolderId}
                             onSelectFolder={handleSelectFolder}
                             onOpenSettings={() => setSettingsOpen(true)}
                         />
                         <EmailList
                             folder={activeFolder}
-                            emails={filteredEmails}
+                            emails={emails}
                             selectedEmailId={selectedEmailId}
                             onSelectEmail={setSelectedEmailId}
                         />
-                        <EmailReader email={selectedEmail} />
+                        <EmailReader email={selectedEmailDetail} />
                     </>
                 ) : (
                     <div className="app-empty">

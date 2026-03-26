@@ -85,6 +85,54 @@ func (a *App) DeleteAccount(id string) error {
 	return a.accounts.delete(id)
 }
 
+// GetFolders fetches IMAP folders for an account.
+func (a *App) GetFolders(accountID string) ([]Folder, error) {
+	if a.accounts == nil {
+		return nil, fmt.Errorf("service not ready")
+	}
+	acc, err := a.accounts.getByID(accountID)
+	if err != nil {
+		return nil, err
+	}
+	pwd, err := a.accounts.getPassword(accountID)
+	if err != nil {
+		return nil, err
+	}
+	return getFolders(acc.IMAP, pwd)
+}
+
+// GetEmails fetches recent emails for a folder.
+func (a *App) GetEmails(accountID string, folder string) ([]EmailListItem, error) {
+	if a.accounts == nil {
+		return nil, fmt.Errorf("service not ready")
+	}
+	acc, err := a.accounts.getByID(accountID)
+	if err != nil {
+		return nil, err
+	}
+	pwd, err := a.accounts.getPassword(accountID)
+	if err != nil {
+		return nil, err
+	}
+	return getEmails(acc.IMAP, pwd, folder, accountID)
+}
+
+// GetEmailDetail fetches the full content of an email by UID.
+func (a *App) GetEmailDetail(accountID string, folder string, uid uint32) (*EmailDetail, error) {
+	if a.accounts == nil {
+		return nil, fmt.Errorf("service not ready")
+	}
+	acc, err := a.accounts.getByID(accountID)
+	if err != nil {
+		return nil, err
+	}
+	pwd, err := a.accounts.getPassword(accountID)
+	if err != nil {
+		return nil, err
+	}
+	return getEmailDetail(acc.IMAP, pwd, folder, uid, accountID)
+}
+
 // appDataDir returns the platform-appropriate directory for storing app data.
 func appDataDir() (string, error) {
 	configDir, err := os.UserConfigDir()

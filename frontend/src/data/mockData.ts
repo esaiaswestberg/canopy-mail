@@ -33,6 +33,7 @@ export const mockFolders: Folder[] = [
 export const mockEmails: EmailListItem[] = [
     {
         id: 'email-1',
+        uid: 0,
         sender: { name: 'Sarah Chen', email: 'sarah.chen@designco.io' },
         subject: 'Updated mockups for the onboarding flow',
         preview: 'Hey! I\'ve finished the revised screens. The main change is the welcome step now includes a short product tour before asking for permissions...',
@@ -45,6 +46,7 @@ export const mockEmails: EmailListItem[] = [
     },
     {
         id: 'email-2',
+        uid: 0,
         sender: { name: 'GitHub', email: 'noreply@github.com' },
         subject: '[canopy-mail] PR #47: Add IMAP connection pooling',
         preview: 'Jordan Lee opened a pull request. This adds a connection pool to the IMAP service layer, reducing latency on folder switches by about 40%...',
@@ -57,6 +59,7 @@ export const mockEmails: EmailListItem[] = [
     },
     {
         id: 'email-3',
+        uid: 0,
         sender: { name: 'Vercel', email: 'no-reply@vercel.com' },
         subject: 'Deployment successful: canopy-web → production',
         preview: 'Your deployment to production is live. 47 files changed, bundle size: 142 kB gzipped. View deployment →',
@@ -69,6 +72,7 @@ export const mockEmails: EmailListItem[] = [
     },
     {
         id: 'email-4',
+        uid: 0,
         sender: { name: 'Marcus Webb', email: 'm.webb@example.com' },
         subject: 'Re: Q2 roadmap sync',
         preview: 'Sounds good to me. I\'ll block off Thursday afternoon. One thing I want to make sure we cover is the performance regression we saw in the last...',
@@ -81,6 +85,7 @@ export const mockEmails: EmailListItem[] = [
     },
     {
         id: 'email-5',
+        uid: 0,
         sender: { name: 'Stripe', email: 'no-reply@stripe.com' },
         subject: 'Your monthly invoice is ready',
         preview: 'Invoice #INV-20260301 for $49.00 is available in your dashboard. Payment will be collected automatically on April 1st...',
@@ -93,6 +98,7 @@ export const mockEmails: EmailListItem[] = [
     },
     {
         id: 'email-6',
+        uid: 0,
         sender: { name: 'Priya Nair', email: 'priya@opensourcefund.org' },
         subject: 'Sponsorship opportunity — Open Source Fund',
         preview: 'Hi Alex, we\'ve been following Canopy Mail and love the direction you\'re taking it. We\'d love to discuss a potential sponsorship through our...',
@@ -105,6 +111,7 @@ export const mockEmails: EmailListItem[] = [
     },
     {
         id: 'email-7',
+        uid: 0,
         sender: { name: 'Linear', email: 'notifications@linear.app' },
         subject: 'Issue assigned: CAN-112 — Search indexing performance',
         preview: 'Jordan Lee assigned you to CAN-112: Search indexing is taking too long on large mailboxes (>50k emails). Needs investigation into the SQLite...',
@@ -117,6 +124,7 @@ export const mockEmails: EmailListItem[] = [
     },
     {
         id: 'email-8',
+        uid: 0,
         sender: { name: 'Tom Richards', email: 'tom.r@oldcorp.net' },
         subject: 'Coffee chat this week?',
         preview: 'Hey Alex, been a while! I\'m in your city Tuesday through Thursday — would love to catch up over coffee if you have an hour free...',

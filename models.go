@@ -4,7 +4,7 @@ package main
 type ServerConfig struct {
 	Host       string `json:"host"`
 	Port       int    `json:"port"`
-	Security   string `json:"security"`   // "ssl", "starttls", "none"
+	Security   string `json:"security"` // "ssl", "starttls", "none"
 	Username   string `json:"username"`
 	AuthMethod string `json:"authMethod"` // "password", "app-password", "oauth2"
 }
@@ -18,6 +18,40 @@ type Account struct {
 	AvatarColor    string       `json:"avatarColor"`
 	IMAP           ServerConfig `json:"imap"`
 	SMTP           ServerConfig `json:"smtp"`
+}
+
+type Folder struct {
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	Icon        string `json:"icon"`
+	UnreadCount int    `json:"unreadCount"`
+	IsSystem    bool   `json:"isSystem"`
+}
+
+type EmailSender struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type EmailListItem struct {
+	ID            string      `json:"id"`
+	UID           uint32      `json:"uid"` // Need UID for fetching email detail
+	Sender        EmailSender `json:"sender"`
+	Subject       string      `json:"subject"`
+	Preview       string      `json:"preview"` // Keeping this empty since user preferred fast loading
+	Timestamp     string      `json:"timestamp"`
+	IsRead        bool        `json:"isRead"`
+	IsStarred     bool        `json:"isStarred"`
+	HasAttachment bool        `json:"hasAttachment"`
+	FolderID      string      `json:"folderId"`
+	AccountID     string      `json:"accountId"`
+}
+
+type EmailDetail struct {
+	EmailListItem
+	BodyHtml   string        `json:"bodyHtml"`
+	Recipients []EmailSender `json:"recipients"`
+	Cc         []EmailSender `json:"cc"`
 }
 
 // AddAccountRequest is sent by the frontend when the user completes the wizard.

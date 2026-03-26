@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/emersion/go-imap v1.2.1
+	github.com/emersion/go-message v0.15.0
 	github.com/google/uuid v1.6.0
 	github.com/wailsapp/wails/v2 v2.12.0
 	modernc.org/sqlite v1.47.0
@@ -14,6 +15,7 @@ require (
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emersion/go-sasl v0.0.0-20200509203442-7bfe0ed36a21 // indirect
+	github.com/emersion/go-textwrapper v0.0.0-20200911093747-65d896831594 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect

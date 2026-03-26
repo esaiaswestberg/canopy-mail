@@ -43,6 +43,7 @@ export interface EmailSender {
 
 export interface EmailListItem {
     id: string
+    uid: number
     sender: EmailSender
     subject: string
     preview: string

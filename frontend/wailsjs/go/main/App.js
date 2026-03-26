@@ -14,6 +14,18 @@ export function GetAccounts() {
   return window['go']['main']['App']['GetAccounts']();
 }
 
+export function GetEmailDetail(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetEmailDetail'](arg1, arg2, arg3);
+}
+
+export function GetEmails(arg1, arg2) {
+  return window['go']['main']['App']['GetEmails'](arg1, arg2);
+}
+
+export function GetFolders(arg1) {
+  return window['go']['main']['App']['GetFolders'](arg1);
+}
+
 export function UpdateAccount(arg1) {
   return window['go']['main']['App']['UpdateAccount'](arg1);
 }

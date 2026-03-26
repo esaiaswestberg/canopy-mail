@@ -139,6 +139,38 @@ func (s *accountService) update(req UpdateAccountRequest) (*Account, error) {
 	}, nil
 }
 
+func (s *accountService) getByID(id string) (*Account, error) {
+	var a Account
+	err := s.db.QueryRow(`
+		SELECT id, email, display_name, avatar_initials, avatar_color,
+		       imap_host, imap_port, imap_security, imap_username, imap_auth_method,
+		       smtp_host, smtp_port, smtp_security, smtp_username, smtp_auth_method
+		FROM accounts
+		WHERE id = ?
+	`, id).Scan(
+		&a.ID, &a.Email, &a.DisplayName, &a.AvatarInitials, &a.AvatarColor,
+		&a.IMAP.Host, &a.IMAP.Port, &a.IMAP.Security, &a.IMAP.Username, &a.IMAP.AuthMethod,
+		&a.SMTP.Host, &a.SMTP.Port, &a.SMTP.Security, &a.SMTP.Username, &a.SMTP.AuthMethod,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (s *accountService) getPassword(id string) (string, error) {
+	var encPwd []byte
+	err := s.db.QueryRow(`SELECT password_enc FROM accounts WHERE id = ?`, id).Scan(&encPwd)
+	if err != nil {
+		return "", err
+	}
+	pwd, err := decrypt(s.key, encPwd)
+	if err != nil {
+		return "", err
+	}
+	return string(pwd), nil
+}
+
 func (s *accountService) delete(id string) error {
 	_, err := s.db.Exec(`DELETE FROM accounts WHERE id = ?`, id)
 	return err
