@@ -5,3 +5,27 @@
     overflow: hidden;
     background-color: var(--color-bg-app);
 }
+
+.app-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-empty__btn {
+    padding: 10px var(--spacing-5);
+    background-color: var(--color-accent);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.app-empty__btn:hover {
+    background-color: var(--color-accent-hover);
+}

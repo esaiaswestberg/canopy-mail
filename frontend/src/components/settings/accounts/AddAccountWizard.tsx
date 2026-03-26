@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
+import { AddAccount } from '../../../../wailsjs/go/main/App'
+import { main as WailsModels } from '../../../../wailsjs/go/models'
 import { ChevronLeft, Mail } from 'lucide-react'
-import { Account, ServerConfig, ConnectionSecurity, AuthMethod } from '../../../types/mail'
+import { Account, ConnectionSecurity, AuthMethod } from '../../../types/mail'
 import { AVATAR_COLORS, AvatarColor } from './avatarColors'
 import {
     detectProvider, deriveAvatarInitials, PROVIDER_CONFIGS, KnownProvider,
@@ -143,6 +145,7 @@ function ServerSection({ title, defaultPorts, host, onChangeHost, port, onChange
 export default function AddAccountWizard({ onComplete, onCancel }: AddAccountWizardProps) {
     const [step, setStep] = useState<WizardStep>(1)
     const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState(false)
 
     // Step 1
     const [email, setEmail] = useState('')
@@ -203,7 +206,7 @@ export default function AddAccountWizard({ onComplete, onCancel }: AddAccountWiz
         setStep(3)
     }
 
-    function handleSubmit() {
+    async function handleSubmit() {
         setError(null)
         if (!displayName.trim()) {
             setError('Please enter a display name.')
@@ -213,25 +216,31 @@ export default function AddAccountWizard({ onComplete, onCancel }: AddAccountWiz
             setError('Please enter your password.')
             return
         }
-        const imap: ServerConfig = {
-            host: imapHost, port: imapPort, tls: imapSecurity !== 'none',
-            security: imapSecurity, username: imapUsername, authMethod: imapAuthMethod,
+        setLoading(true)
+        try {
+            const account = await AddAccount(WailsModels.AddAccountRequest.createFrom({
+                email: email.trim(),
+                displayName: displayName.trim(),
+                avatarColor,
+                password,
+                imap: { host: imapHost, port: imapPort, security: imapSecurity, username: imapUsername, authMethod: imapAuthMethod },
+                smtp: { host: smtpHost, port: smtpPort, security: smtpSecurity, username: smtpUsername, authMethod: smtpAuthMethod },
+            }))
+            onComplete(account as Account)
+        } catch (err: unknown) {
+            const msg = String(err)
+            if (msg.includes('authentication failed')) {
+                setError('Wrong username or password. Check your credentials and try again.')
+            } else if (msg.includes('connection failed')) {
+                setError('Could not connect to the mail server. Check the hostname and port.')
+            } else if (msg.includes('already exists')) {
+                setError('An account with this email address is already configured.')
+            } else {
+                setError(`Failed to add account: ${msg}`)
+            }
+        } finally {
+            setLoading(false)
         }
-        const smtp: ServerConfig = {
-            host: smtpHost, port: smtpPort, tls: smtpSecurity !== 'none',
-            security: smtpSecurity, username: smtpUsername, authMethod: smtpAuthMethod,
-        }
-        const account: Account = {
-            id: crypto.randomUUID(),
-            email: email.trim(),
-            displayName: displayName.trim(),
-            avatarInitials: deriveAvatarInitials(displayName),
-            avatarColor,
-            isActive: false,
-            imap,
-            smtp,
-        }
-        onComplete(account)
     }
 
     const stepLabels = ['Email address', 'Server settings', 'Credentials']
@@ -385,7 +394,9 @@ export default function AddAccountWizard({ onComplete, onCancel }: AddAccountWiz
                     <button className="add-account-wizard__cancel-btn" onClick={onCancel}>Cancel</button>
                     {step < 3
                         ? <button className="add-account-wizard__next-btn" onClick={step === 1 ? goToStep2 : goToStep3}>Continue</button>
-                        : <button className="add-account-wizard__submit-btn" onClick={handleSubmit}>Add Account</button>
+                        : <button className="add-account-wizard__submit-btn" onClick={handleSubmit} disabled={loading}>
+                            {loading ? 'Verifying…' : 'Add Account'}
+                          </button>
                     }
                 </div>
             </div>

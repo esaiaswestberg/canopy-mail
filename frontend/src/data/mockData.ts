@@ -7,9 +7,8 @@ export const mockAccounts: Account[] = [
         displayName: 'Alex Morgan',
         avatarInitials: 'AM',
         avatarColor: '#6b7bff',
-        isActive: true,
-        imap: { host: 'imap.personal.dev', port: 993, tls: true },
-        smtp: { host: 'smtp.personal.dev', port: 587, tls: true },
+        imap: { host: 'imap.personal.dev', port: 993, security: 'ssl', username: 'alex@personal.dev', authMethod: 'password' },
+        smtp: { host: 'smtp.personal.dev', port: 587, security: 'starttls', username: 'alex@personal.dev', authMethod: 'password' },
     },
     {
         id: 'acc-2',
@@ -17,9 +16,8 @@ export const mockAccounts: Account[] = [
         displayName: 'Alex Morgan (Work)',
         avatarInitials: 'AW',
         avatarColor: '#4caf8f',
-        isActive: false,
-        imap: { host: 'imap.work.io', port: 993, tls: true },
-        smtp: { host: 'smtp.work.io', port: 587, tls: true },
+        imap: { host: 'imap.work.io', port: 993, security: 'ssl', username: 'alex@work.io', authMethod: 'password' },
+        smtp: { host: 'smtp.work.io', port: 587, security: 'starttls', username: 'alex@work.io', authMethod: 'password' },
     },
 ]
 

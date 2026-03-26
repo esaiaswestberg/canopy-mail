@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS accounts (
+    id               TEXT    NOT NULL PRIMARY KEY,
+    email            TEXT    NOT NULL UNIQUE,
+    display_name     TEXT    NOT NULL,
+    avatar_initials  TEXT    NOT NULL,
+    avatar_color     TEXT    NOT NULL,
+    imap_host        TEXT    NOT NULL,
+    imap_port        INTEGER NOT NULL DEFAULT 993,
+    imap_security    TEXT    NOT NULL DEFAULT 'ssl',
+    imap_username    TEXT    NOT NULL,
+    imap_auth_method TEXT    NOT NULL DEFAULT 'password',
+    smtp_host        TEXT    NOT NULL,
+    smtp_port        INTEGER NOT NULL DEFAULT 587,
+    smtp_security    TEXT    NOT NULL DEFAULT 'starttls',
+    smtp_username    TEXT    NOT NULL,
+    smtp_auth_method TEXT    NOT NULL DEFAULT 'password',
+    password_enc     BLOB    NOT NULL,
+    created_at       TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at       TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);

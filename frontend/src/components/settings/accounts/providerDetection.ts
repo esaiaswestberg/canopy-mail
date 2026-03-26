@@ -11,28 +11,28 @@ export interface ProviderConfig {
 export const PROVIDER_CONFIGS: Record<KnownProvider, ProviderConfig> = {
     gmail: {
         name: 'Gmail',
-        imap: { host: 'imap.gmail.com', port: 993, tls: true, security: 'ssl', authMethod: 'app-password' },
-        smtp: { host: 'smtp.gmail.com', port: 587, tls: true, security: 'starttls', authMethod: 'app-password' },
+        imap: { host: 'imap.gmail.com', port: 993, security: 'ssl', username: '', authMethod: 'app-password' },
+        smtp: { host: 'smtp.gmail.com', port: 587, security: 'starttls', username: '', authMethod: 'app-password' },
     },
     outlook: {
         name: 'Outlook',
-        imap: { host: 'outlook.office365.com', port: 993, tls: true, security: 'ssl', authMethod: 'password' },
-        smtp: { host: 'smtp.office365.com', port: 587, tls: true, security: 'starttls', authMethod: 'password' },
+        imap: { host: 'outlook.office365.com', port: 993, security: 'ssl', username: '', authMethod: 'password' },
+        smtp: { host: 'smtp.office365.com', port: 587, security: 'starttls', username: '', authMethod: 'password' },
     },
     yahoo: {
         name: 'Yahoo Mail',
-        imap: { host: 'imap.mail.yahoo.com', port: 993, tls: true, security: 'ssl', authMethod: 'app-password' },
-        smtp: { host: 'smtp.mail.yahoo.com', port: 587, tls: true, security: 'starttls', authMethod: 'app-password' },
+        imap: { host: 'imap.mail.yahoo.com', port: 993, security: 'ssl', username: '', authMethod: 'app-password' },
+        smtp: { host: 'smtp.mail.yahoo.com', port: 587, security: 'starttls', username: '', authMethod: 'app-password' },
     },
     icloud: {
         name: 'iCloud Mail',
-        imap: { host: 'imap.mail.me.com', port: 993, tls: true, security: 'ssl', authMethod: 'app-password' },
-        smtp: { host: 'smtp.mail.me.com', port: 587, tls: true, security: 'starttls', authMethod: 'app-password' },
+        imap: { host: 'imap.mail.me.com', port: 993, security: 'ssl', username: '', authMethod: 'app-password' },
+        smtp: { host: 'smtp.mail.me.com', port: 587, security: 'starttls', username: '', authMethod: 'app-password' },
     },
     fastmail: {
         name: 'Fastmail',
-        imap: { host: 'imap.fastmail.com', port: 993, tls: true, security: 'ssl', authMethod: 'password' },
-        smtp: { host: 'smtp.fastmail.com', port: 587, tls: true, security: 'starttls', authMethod: 'password' },
+        imap: { host: 'imap.fastmail.com', port: 993, security: 'ssl', username: '', authMethod: 'password' },
+        smtp: { host: 'smtp.fastmail.com', port: 587, security: 'starttls', username: '', authMethod: 'password' },
     },
 }
 

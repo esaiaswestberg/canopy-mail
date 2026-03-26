@@ -4,10 +4,9 @@ export type AuthMethod = 'password' | 'app-password' | 'oauth2'
 export interface ServerConfig {
     host: string
     port: number
-    tls: boolean
-    security?: ConnectionSecurity
-    username?: string
-    authMethod?: AuthMethod
+    security: ConnectionSecurity
+    username: string
+    authMethod: AuthMethod
 }
 
 export interface Account {
@@ -16,9 +15,8 @@ export interface Account {
     displayName: string
     avatarInitials: string
     avatarColor: string
-    isActive: boolean
-    imap?: ServerConfig
-    smtp?: ServerConfig
+    imap: ServerConfig
+    smtp: ServerConfig
 }
 
 export type FolderIcon =

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Account, ServerConfig } from '../../../types/mail'
+import { Account, ServerConfig, ConnectionSecurity } from '../../../types/mail'
 import { AVATAR_COLORS } from './avatarColors'
 import './EditAccountForm.css'
 
@@ -7,6 +7,12 @@ interface EditAccountFormProps {
     account: Account
     onSave: (updated: Account) => void
     onCancel: () => void
+}
+
+const SECURITY_LABELS: Record<ConnectionSecurity, string> = {
+    ssl:      'SSL / TLS',
+    starttls: 'STARTTLS',
+    none:     'None',
 }
 
 function ServerSection({ title, config, onChange }: {
@@ -39,16 +45,28 @@ function ServerSection({ title, config, onChange }: {
                         max={65535}
                     />
                 </div>
-                <div className="edit-account-form__field edit-account-form__field--tls">
-                    <label className="edit-account-form__label">TLS</label>
-                    <button
-                        type="button"
-                        className={`edit-account-form__tls-toggle${config.tls ? ' edit-account-form__tls-toggle--on' : ''}`}
-                        onClick={() => onChange({ ...config, tls: !config.tls })}
+                <div className="edit-account-form__field edit-account-form__field--security">
+                    <label className="edit-account-form__label">Security</label>
+                    <select
+                        className="edit-account-form__select"
+                        value={config.security}
+                        onChange={e => onChange({ ...config, security: e.target.value as ConnectionSecurity })}
                     >
-                        {config.tls ? 'On' : 'Off'}
-                    </button>
+                        {(Object.keys(SECURITY_LABELS) as ConnectionSecurity[]).map(k => (
+                            <option key={k} value={k}>{SECURITY_LABELS[k]}</option>
+                        ))}
+                    </select>
                 </div>
+            </div>
+            <div className="edit-account-form__field">
+                <label className="edit-account-form__label">Username</label>
+                <input
+                    className="edit-account-form__input"
+                    type="text"
+                    value={config.username}
+                    onChange={e => onChange({ ...config, username: e.target.value })}
+                    placeholder="user@example.com"
+                />
             </div>
         </div>
     )
@@ -57,8 +75,8 @@ function ServerSection({ title, config, onChange }: {
 export default function EditAccountForm({ account, onSave, onCancel }: EditAccountFormProps) {
     const [displayName, setDisplayName] = useState(account.displayName)
     const [avatarColor, setAvatarColor] = useState(account.avatarColor)
-    const [imap, setImap] = useState<ServerConfig>(account.imap ?? { host: '', port: 993, tls: true })
-    const [smtp, setSmtp] = useState<ServerConfig>(account.smtp ?? { host: '', port: 587, tls: true })
+    const [imap, setImap] = useState<ServerConfig>(account.imap)
+    const [smtp, setSmtp] = useState<ServerConfig>(account.smtp)
 
     function handleSave() {
         if (!displayName.trim()) return
