@@ -8,6 +8,8 @@ export const mockAccounts: Account[] = [
         avatarInitials: 'AM',
         avatarColor: '#6b7bff',
         isActive: true,
+        imap: { host: 'imap.personal.dev', port: 993, tls: true },
+        smtp: { host: 'smtp.personal.dev', port: 587, tls: true },
     },
     {
         id: 'acc-2',
@@ -16,6 +18,8 @@ export const mockAccounts: Account[] = [
         avatarInitials: 'AW',
         avatarColor: '#4caf8f',
         isActive: false,
+        imap: { host: 'imap.work.io', port: 993, tls: true },
+        smtp: { host: 'smtp.work.io', port: 587, tls: true },
     },
 ]
 

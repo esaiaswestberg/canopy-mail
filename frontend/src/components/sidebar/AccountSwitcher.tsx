@@ -7,9 +7,10 @@ interface AccountSwitcherProps {
     accounts: Account[]
     activeAccount: Account
     onSelectAccount: (id: string) => void
+    onOpenSettings: () => void
 }
 
-export default function AccountSwitcher({ accounts, activeAccount, onSelectAccount }: AccountSwitcherProps) {
+export default function AccountSwitcher({ accounts, activeAccount, onSelectAccount, onOpenSettings }: AccountSwitcherProps) {
     const [open, setOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
 
@@ -76,7 +77,7 @@ export default function AccountSwitcher({ accounts, activeAccount, onSelectAccou
                         </button>
                     ))}
                     <div className="account-switcher__dropdown-divider" />
-                    <button className="account-switcher__dropdown-item account-switcher__dropdown-item--add">
+                    <button className="account-switcher__dropdown-item account-switcher__dropdown-item--add" onClick={() => { setOpen(false); onOpenSettings() }}>
                         <Plus size={14} />
                         <span>Add account</span>
                     </button>

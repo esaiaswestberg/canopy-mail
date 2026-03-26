@@ -1,0 +1,429 @@
+/* ── Outer shell — fills the entire modal dialog ───────────────────────── */
+
+.add-account-wizard {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ── Pinned header ──────────────────────────────────────────────────────── */
+
+.add-account-wizard__header {
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+    padding: var(--spacing-4) var(--spacing-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+}
+
+.add-account-wizard__header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-4);
+}
+
+.add-account-wizard__header-spacer {
+    /* mirrors back-btn width so step indicator stays centered */
+    min-width: 70px;
+}
+
+.add-account-wizard__back-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 70px;
+    padding: 5px var(--spacing-2);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.add-account-wizard__back-btn:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+.add-account-wizard__header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.add-account-wizard__title {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.add-account-wizard__subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.add-account-wizard__provider-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    margin-top: var(--spacing-1);
+    padding: 4px var(--spacing-2);
+    background-color: var(--color-accent-soft);
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-badge-text);
+    width: fit-content;
+}
+
+/* ── Step indicator ─────────────────────────────────────────────────────── */
+
+.wizard-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+}
+
+.wizard-steps__item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    flex-shrink: 0;
+}
+
+.wizard-steps__dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    background-color: var(--color-bg-hover);
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.wizard-steps__item--active .wizard-steps__dot {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+}
+
+.wizard-steps__item--done .wizard-steps__dot {
+    background-color: var(--color-accent-soft);
+    border-color: var(--color-accent);
+    color: var(--color-badge-text);
+}
+
+.wizard-steps__label {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.wizard-steps__item--active .wizard-steps__label {
+    color: var(--color-text-primary);
+}
+
+.wizard-steps__item--done .wizard-steps__label {
+    color: var(--color-text-secondary);
+}
+
+.wizard-steps__connector {
+    width: 32px;
+    height: 1px;
+    background-color: var(--color-border-strong);
+    flex-shrink: 0;
+    margin: 0 var(--spacing-2);
+}
+
+.wizard-steps__connector--done {
+    background-color: var(--color-accent-soft);
+}
+
+/* ── Scrollable body ────────────────────────────────────────────────────── */
+
+.add-account-wizard__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-5) var(--spacing-6);
+}
+
+/* ── Step 1 ─────────────────────────────────────────────────────────────── */
+
+.add-account-wizard__step-1 {
+    max-width: 480px;
+    padding-top: var(--spacing-4);
+}
+
+/* ── Step 2 ─────────────────────────────────────────────────────────────── */
+
+.add-account-wizard__step-2 {
+    display: flex;
+    gap: 0;
+}
+
+.add-account-wizard__server-divider {
+    width: 1px;
+    background-color: var(--color-border-subtle);
+    margin: 0 var(--spacing-6);
+    flex-shrink: 0;
+}
+
+/* ── Step 3 ─────────────────────────────────────────────────────────────── */
+
+.add-account-wizard__step-3 {
+    display: flex;
+    gap: var(--spacing-6);
+    align-items: flex-start;
+}
+
+.add-account-wizard__step-3-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+}
+
+.add-account-wizard__step-3-right {
+    width: 200px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding-top: var(--spacing-2);
+}
+
+.add-account-wizard__avatar-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    transition: background-color var(--transition-fast);
+}
+
+.add-account-wizard__avatar-preview-name {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-align: center;
+}
+
+.add-account-wizard__avatar-preview-email {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-align: center;
+    word-break: break-all;
+}
+
+/* ── Server section ─────────────────────────────────────────────────────── */
+
+.wizard-server {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+    min-width: 0;
+}
+
+.wizard-server__title {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    padding-bottom: var(--spacing-2);
+    border-bottom: 1px solid var(--color-border-subtle);
+    margin-bottom: var(--spacing-1);
+}
+
+.wizard-server__row {
+    display: flex;
+    gap: var(--spacing-3);
+    align-items: flex-end;
+}
+
+/* ── Shared field primitives ────────────────────────────────────────────── */
+
+.wizard-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.wizard-field--port {
+    width: 80px;
+    flex-shrink: 0;
+}
+
+.wizard-field--grow {
+    flex: 1;
+    min-width: 0;
+}
+
+.wizard-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.wizard-input {
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 7px var(--spacing-2);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    outline: none;
+    transition: border-color var(--transition-fast);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wizard-input--lg {
+    padding: 10px var(--spacing-3);
+    font-size: var(--font-size-md);
+}
+
+.wizard-input:focus {
+    border-color: var(--color-accent);
+}
+
+.wizard-select {
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 7px var(--spacing-2);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color var(--transition-fast);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b8fa8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--spacing-2) center;
+    padding-right: var(--spacing-5);
+}
+
+.wizard-select:focus {
+    border-color: var(--color-accent);
+}
+
+.wizard-select option {
+    background-color: var(--color-bg-list);
+    color: var(--color-text-primary);
+}
+
+/* ── Color picker ───────────────────────────────────────────────────────── */
+
+.add-account-wizard__color-picker {
+    display: flex;
+    gap: var(--spacing-2);
+    align-items: center;
+    padding: var(--spacing-1) 0;
+}
+
+.add-account-wizard__color-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.add-account-wizard__color-swatch:hover {
+    transform: scale(1.2);
+}
+
+.add-account-wizard__color-swatch--selected {
+    outline: 2px solid var(--color-text-primary);
+    outline-offset: 2px;
+}
+
+/* ── Pinned footer ──────────────────────────────────────────────────────── */
+
+.add-account-wizard__footer {
+    flex-shrink: 0;
+    border-top: 1px solid var(--color-border-subtle);
+    padding: var(--spacing-3) var(--spacing-6);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-3);
+    min-height: 60px;
+}
+
+.add-account-wizard__error {
+    font-size: var(--font-size-sm);
+    color: var(--color-danger);
+    flex: 1;
+}
+
+.add-account-wizard__actions {
+    display: flex;
+    gap: var(--spacing-2);
+    margin-left: auto;
+}
+
+.add-account-wizard__cancel-btn,
+.add-account-wizard__next-btn,
+.add-account-wizard__submit-btn {
+    padding: 8px var(--spacing-5);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.add-account-wizard__cancel-btn {
+    background-color: var(--color-bg-hover);
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-text-secondary);
+}
+
+.add-account-wizard__cancel-btn:hover {
+    background-color: var(--color-bg-selected);
+    color: var(--color-text-primary);
+}
+
+.add-account-wizard__next-btn,
+.add-account-wizard__submit-btn {
+    background-color: var(--color-accent);
+    border: 1px solid transparent;
+    color: #fff;
+}
+
+.add-account-wizard__next-btn:hover,
+.add-account-wizard__submit-btn:hover {
+    background-color: var(--color-accent-hover);
+}

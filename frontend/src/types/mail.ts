@@ -1,3 +1,15 @@
+export type ConnectionSecurity = 'ssl' | 'starttls' | 'none'
+export type AuthMethod = 'password' | 'app-password' | 'oauth2'
+
+export interface ServerConfig {
+    host: string
+    port: number
+    tls: boolean
+    security?: ConnectionSecurity
+    username?: string
+    authMethod?: AuthMethod
+}
+
 export interface Account {
     id: string
     email: string
@@ -5,6 +17,8 @@ export interface Account {
     avatarInitials: string
     avatarColor: string
     isActive: boolean
+    imap?: ServerConfig
+    smtp?: ServerConfig
 }
 
 export type FolderIcon =

@@ -5,17 +5,20 @@ import Sidebar from './components/sidebar/Sidebar'
 import EmailList from './components/email-list/EmailList'
 import EmailReader from './components/email-reader/EmailReader'
 import ContextMenu from './components/context-menu/ContextMenu'
+import SettingsModal from './components/settings/SettingsModal'
 import { mockAccounts, mockEmails, mockEmailDetail, mockFolders } from './data/mockData'
-import { EmailDetail } from './types/mail'
+import { Account, EmailDetail } from './types/mail'
 import { ContextMenuContext, ContextMenuState, ContextMenuItem } from './context/ContextMenuContext'
 
 function App() {
+    const [accounts, setAccounts] = useState<Account[]>(mockAccounts)
     const [selectedAccountId, setSelectedAccountId] = useState(mockAccounts[0].id)
     const [selectedFolderId, setSelectedFolderId] = useState('inbox')
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(mockEmails[0].id)
     const [menuState, setMenuState] = useState<ContextMenuState | null>(null)
+    const [settingsOpen, setSettingsOpen] = useState(false)
 
-    const activeAccount = mockAccounts.find(a => a.id === selectedAccountId)!
+    const activeAccount = accounts.find(a => a.id === selectedAccountId) ?? accounts[0]
 
     const filteredEmails = useMemo(
         () => mockEmails.filter(e => e.folderId === selectedFolderId && e.accountId === selectedAccountId),
@@ -46,6 +49,24 @@ function App() {
         setSelectedEmailId(null)
     }
 
+    function handleAddAccount(account: Account) {
+        setAccounts(prev => [...prev, account])
+    }
+
+    function handleUpdateAccount(updated: Account) {
+        setAccounts(prev => prev.map(a => a.id === updated.id ? updated : a))
+    }
+
+    function handleDeleteAccount(id: string) {
+        setAccounts(prev => {
+            const next = prev.filter(a => a.id !== id)
+            if (selectedAccountId === id && next.length > 0) {
+                setSelectedAccountId(next[0].id)
+            }
+            return next
+        })
+    }
+
     function openMenu(x: number, y: number, items: ContextMenuItem[]) {
         setMenuState({ x, y, items })
     }
@@ -58,12 +79,13 @@ function App() {
         <ContextMenuContext.Provider value={{ openMenu, closeMenu }}>
             <div id="App">
                 <Sidebar
-                    accounts={mockAccounts}
+                    accounts={accounts}
                     activeAccount={activeAccount}
                     onSelectAccount={handleSelectAccount}
                     folders={mockFolders}
                     selectedFolderId={selectedFolderId}
                     onSelectFolder={handleSelectFolder}
+                    onOpenSettings={() => setSettingsOpen(true)}
                 />
                 <EmailList
                     folder={activeFolder}
@@ -79,6 +101,16 @@ function App() {
                     y={menuState.y}
                     items={menuState.items}
                     onClose={closeMenu}
+                />,
+                document.body
+            )}
+            {settingsOpen && createPortal(
+                <SettingsModal
+                    accounts={accounts}
+                    onClose={() => setSettingsOpen(false)}
+                    onAddAccount={handleAddAccount}
+                    onUpdateAccount={handleUpdateAccount}
+                    onDeleteAccount={handleDeleteAccount}
                 />,
                 document.body
             )}

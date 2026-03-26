@@ -1,0 +1,180 @@
+.edit-account-form {
+    padding: var(--spacing-4);
+    background-color: var(--color-bg-app);
+    border-bottom: 1px solid var(--color-border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+}
+
+.edit-account-form__row {
+    display: flex;
+    gap: var(--spacing-4);
+    align-items: flex-end;
+}
+
+.edit-account-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.edit-account-form__field--name {
+    flex: 1;
+}
+
+.edit-account-form__label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.edit-account-form__input {
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 6px var(--spacing-2);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    outline: none;
+    transition: border-color var(--transition-fast);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.edit-account-form__input:focus {
+    border-color: var(--color-accent);
+}
+
+.edit-account-form__input[type="number"] {
+    width: 72px;
+}
+
+.edit-account-form__color-picker {
+    display: flex;
+    gap: var(--spacing-1);
+    align-items: center;
+    padding: 4px 0;
+}
+
+.edit-account-form__color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+}
+
+.edit-account-form__color-swatch:hover {
+    transform: scale(1.15);
+}
+
+.edit-account-form__color-swatch--selected {
+    outline: 2px solid var(--color-text-primary);
+    outline-offset: 2px;
+}
+
+.edit-account-form__servers {
+    display: flex;
+    gap: var(--spacing-5);
+}
+
+.edit-account-form__server-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.edit-account-form__server-section-title {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.edit-account-form__server-row {
+    display: flex;
+    gap: var(--spacing-2);
+    align-items: flex-end;
+}
+
+.edit-account-form__field--host {
+    flex: 1;
+}
+
+.edit-account-form__field--port {
+    width: 72px;
+}
+
+.edit-account-form__field--tls {
+    width: 52px;
+}
+
+.edit-account-form__tls-toggle {
+    width: 100%;
+    padding: 6px var(--spacing-2);
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.edit-account-form__tls-toggle--on {
+    background-color: var(--color-accent-soft);
+    border-color: var(--color-accent);
+    color: var(--color-badge-text);
+}
+
+.edit-account-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-2);
+}
+
+.edit-account-form__cancel-btn,
+.edit-account-form__save-btn {
+    padding: 7px var(--spacing-4);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.edit-account-form__cancel-btn {
+    background-color: var(--color-bg-hover);
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-text-secondary);
+}
+
+.edit-account-form__cancel-btn:hover {
+    background-color: var(--color-bg-selected);
+    color: var(--color-text-primary);
+}
+
+.edit-account-form__save-btn {
+    background-color: var(--color-accent);
+    border: 1px solid transparent;
+    color: #fff;
+}
+
+.edit-account-form__save-btn:hover:not(:disabled) {
+    background-color: var(--color-accent-hover);
+}
+
+.edit-account-form__save-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
