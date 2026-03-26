@@ -5,6 +5,7 @@ session:
       panes:
         - name: claude
           commands:
+            - export _ZO_DOCTOR="0"
             - unalias cd
             - clear && claude
         - name: runner
