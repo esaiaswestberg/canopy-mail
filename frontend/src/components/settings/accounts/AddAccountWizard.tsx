@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { AddAccount } from '../../../../wailsjs/go/main/App'
 import { main as WailsModels } from '../../../../wailsjs/go/models'
-import { ChevronLeft, Mail } from 'lucide-react'
+import { Mail } from 'lucide-react'
 import { Account, ConnectionSecurity, AuthMethod } from '../../../types/mail'
 import { AVATAR_COLORS, AvatarColor } from './avatarColors'
 import {
@@ -265,15 +265,7 @@ export default function AddAccountWizard({ onComplete, onCancel }: AddAccountWiz
             {/* ── Pinned header ── */}
             <div className="add-account-wizard__header">
                 <div className="add-account-wizard__header-top">
-                    <button
-                        className="add-account-wizard__back-btn"
-                        onClick={() => { setError(null); if (step > 1) setStep(s => (s - 1) as WizardStep); else onCancel() }}
-                    >
-                        <ChevronLeft size={15} />
-                        {step === 1 ? 'Cancel' : 'Back'}
-                    </button>
                     <StepIndicator step={step} labels={stepLabels} />
-                    <div className="add-account-wizard__header-spacer" />
                 </div>
                 <div className="add-account-wizard__header-titles">
                     <h2 className="add-account-wizard__title">{stepTitles[step]}</h2>
@@ -391,7 +383,12 @@ export default function AddAccountWizard({ onComplete, onCancel }: AddAccountWiz
             <div className="add-account-wizard__footer">
                 {error && <div className="add-account-wizard__error">{error}</div>}
                 <div className="add-account-wizard__actions">
-                    <button className="add-account-wizard__cancel-btn" onClick={onCancel}>Cancel</button>
+                    <button 
+                        className="add-account-wizard__cancel-btn" 
+                        onClick={() => { setError(null); if (step > 1) setStep(s => (s - 1) as WizardStep); else onCancel() }}
+                    >
+                        {step === 1 ? 'Cancel' : 'Back'}
+                    </button>
                     {step < 3
                         ? <button className="add-account-wizard__next-btn" onClick={step === 1 ? goToStep2 : goToStep3}>Continue</button>
                         : <button className="add-account-wizard__submit-btn" onClick={handleSubmit} disabled={loading}>

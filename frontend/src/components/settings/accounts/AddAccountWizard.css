@@ -22,35 +22,8 @@
 .add-account-wizard__header-top {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: var(--spacing-4);
-}
-
-.add-account-wizard__header-spacer {
-    /* mirrors back-btn width so step indicator stays centered */
-    min-width: 70px;
-}
-
-.add-account-wizard__back-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 70px;
-    padding: 5px var(--spacing-2);
-    background: none;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-family: inherit;
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    transition: background-color var(--transition-fast), color var(--transition-fast);
-}
-
-.add-account-wizard__back-btn:hover {
-    background-color: var(--color-bg-hover);
-    color: var(--color-text-primary);
 }
 
 .add-account-wizard__header-titles {
