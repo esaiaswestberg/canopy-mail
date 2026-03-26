@@ -1,6 +1,8 @@
 import { Paperclip, Star } from 'lucide-react'
 import { EmailListItem as EmailListItemType } from '../../types/mail'
 import { formatTimestamp } from '../../data/mockData'
+import { useContextMenu } from '../../context/ContextMenuContext'
+import { useEmailContextMenuItems } from '../../hooks/useContextMenuItems'
 import './EmailListItem.css'
 
 interface EmailListItemProps {
@@ -22,10 +24,19 @@ function avatarColor(name: string): string {
 }
 
 export default function EmailListItem({ email, isSelected, onClick }: EmailListItemProps) {
+    const { openMenu } = useContextMenu()
+    const menuItems = useEmailContextMenuItems(email)
+
+    function handleContextMenu(e: React.MouseEvent) {
+        e.preventDefault()
+        openMenu(e.clientX, e.clientY, menuItems)
+    }
+
     return (
         <button
             className={`email-list-item${isSelected ? ' email-list-item--selected' : ''}${!email.isRead ? ' email-list-item--unread' : ''}`}
             onClick={onClick}
+            onContextMenu={handleContextMenu}
         >
             <div className="email-list-item__left">
                 {!email.isRead && <span className="email-list-item__dot" />}

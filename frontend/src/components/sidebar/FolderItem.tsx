@@ -8,6 +8,8 @@ import {
     Trash2,
 } from 'lucide-react'
 import { Folder, FolderIcon } from '../../types/mail'
+import { useContextMenu } from '../../context/ContextMenuContext'
+import { useFolderContextMenuItems } from '../../hooks/useContextMenuItems'
 import './FolderItem.css'
 
 const iconMap: Record<FolderIcon, React.ReactNode> = {
@@ -27,10 +29,19 @@ interface FolderItemProps {
 }
 
 export default function FolderItem({ folder, isActive, onClick }: FolderItemProps) {
+    const { openMenu } = useContextMenu()
+    const menuItems = useFolderContextMenuItems(folder)
+
+    function handleContextMenu(e: React.MouseEvent) {
+        e.preventDefault()
+        openMenu(e.clientX, e.clientY, menuItems)
+    }
+
     return (
         <button
             className={`folder-item${isActive ? ' folder-item--active' : ''}`}
             onClick={onClick}
+            onContextMenu={handleContextMenu}
         >
             <span className={`folder-item__icon${folder.id === 'trash' ? ' folder-item__icon--danger' : ''}`}>
                 {iconMap[folder.icon]}
