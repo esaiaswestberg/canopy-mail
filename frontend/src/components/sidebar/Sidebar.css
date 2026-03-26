@@ -1,0 +1,9 @@
+.sidebar {
+    width: var(--panel-sidebar-width);
+    flex-shrink: 0;
+    background-color: var(--color-bg-sidebar);
+    border-right: 1px solid var(--color-border-subtle);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}

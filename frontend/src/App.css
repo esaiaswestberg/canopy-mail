@@ -1,14 +1,7 @@
 #App {
-    height: 100vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.title {
-    font-size: 3rem;
-    font-weight: 700;
-    color: #ef4444;
-    letter-spacing: 0.05em;
-    margin: 0;
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--color-bg-app);
 }

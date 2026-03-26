@@ -1,0 +1,21 @@
+.folder-tree {
+    padding: var(--spacing-3) var(--spacing-2);
+    flex: 1;
+    overflow-y: auto;
+}
+
+.folder-tree__section-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: var(--spacing-1) var(--spacing-3);
+    margin-bottom: var(--spacing-1);
+}
+
+.folder-tree__list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}

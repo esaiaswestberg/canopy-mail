@@ -1,0 +1,63 @@
+.email-list-header {
+    padding: var(--spacing-4);
+    border-bottom: 1px solid var(--color-border-subtle);
+    flex-shrink: 0;
+}
+
+.email-list-header__top {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-3);
+}
+
+.email-list-header__title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text-accent);
+    line-height: 1;
+}
+
+.email-list-header__count {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background-color: var(--color-bg-hover);
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+.email-list-header__search {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    padding: 6px var(--spacing-3);
+    transition: border-color var(--transition-fast);
+}
+
+.email-list-header__search:focus-within {
+    border-color: var(--color-border-strong);
+}
+
+.email-list-header__search-icon {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.email-list-header__search-input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    width: 100%;
+}
+
+.email-list-header__search-input::placeholder {
+    color: var(--color-text-muted);
+}
