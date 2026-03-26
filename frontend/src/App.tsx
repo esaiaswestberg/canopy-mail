@@ -7,14 +7,15 @@ import { mockAccounts, mockEmails, mockEmailDetail, mockFolders } from './data/m
 import { EmailDetail } from './types/mail'
 
 function App() {
+    const [selectedAccountId, setSelectedAccountId] = useState(mockAccounts[0].id)
     const [selectedFolderId, setSelectedFolderId] = useState('inbox')
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(mockEmails[0].id)
 
-    const activeAccount = mockAccounts[0]
+    const activeAccount = mockAccounts.find(a => a.id === selectedAccountId)!
 
     const filteredEmails = useMemo(
-        () => mockEmails.filter(e => e.folderId === selectedFolderId),
-        [selectedFolderId]
+        () => mockEmails.filter(e => e.folderId === selectedFolderId && e.accountId === selectedAccountId),
+        [selectedFolderId, selectedAccountId]
     )
 
     const activeFolder = mockFolders.find(f => f.id === selectedFolderId)!
@@ -36,10 +37,17 @@ function App() {
         setSelectedEmailId(null)
     }
 
+    function handleSelectAccount(id: string) {
+        setSelectedAccountId(id)
+        setSelectedEmailId(null)
+    }
+
     return (
         <div id="App">
             <Sidebar
-                account={activeAccount}
+                accounts={mockAccounts}
+                activeAccount={activeAccount}
+                onSelectAccount={handleSelectAccount}
                 folders={mockFolders}
                 selectedFolderId={selectedFolderId}
                 onSelectFolder={handleSelectFolder}

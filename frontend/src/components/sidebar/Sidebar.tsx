@@ -5,16 +5,18 @@ import FolderTree from './FolderTree'
 import './Sidebar.css'
 
 interface SidebarProps {
-    account: Account
+    accounts: Account[]
+    activeAccount: Account
+    onSelectAccount: (id: string) => void
     folders: Folder[]
     selectedFolderId: string
     onSelectFolder: (id: string) => void
 }
 
-export default function Sidebar({ account, folders, selectedFolderId, onSelectFolder }: SidebarProps) {
+export default function Sidebar({ accounts, activeAccount, onSelectAccount, folders, selectedFolderId, onSelectFolder }: SidebarProps) {
     return (
         <aside className="sidebar">
-            <AccountSwitcher account={account} />
+            <AccountSwitcher accounts={accounts} activeAccount={activeAccount} onSelectAccount={onSelectAccount} />
             <FolderTree
                 folders={folders}
                 selectedFolderId={selectedFolderId}
