@@ -1,0 +1,19 @@
+session:
+  name: canopy-mail
+  windows:
+    - name: development
+      panes:
+        - name: claude
+          commands:
+            - unalias cd
+            - clear && claude
+        - name: runner
+          command: clear && air
+        - name: project
+          command: clear && echo Welcome to Canopy Mail!
+      layout:
+        columns:
+          - claude
+          - rows:
+            - runner
+            - project
