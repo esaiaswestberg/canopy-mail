@@ -1,3 +1,4 @@
+import { Settings } from 'lucide-react'
 import { Account, Folder } from '../../types/mail'
 import AccountSwitcher from './AccountSwitcher'
 import FolderTree from './FolderTree'
@@ -19,6 +20,12 @@ export default function Sidebar({ account, folders, selectedFolderId, onSelectFo
                 selectedFolderId={selectedFolderId}
                 onSelectFolder={onSelectFolder}
             />
+            <div className="sidebar__footer">
+                <button className="sidebar__settings-btn">
+                    <Settings size={15} />
+                    <span>Settings</span>
+                </button>
+            </div>
         </aside>
     )
 }
