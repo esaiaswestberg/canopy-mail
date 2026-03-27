@@ -29,6 +29,7 @@ func (s *syncManager) Start(ctx context.Context) {
 	accs, _ := s.accounts.getAll()
 	for _, acc := range accs {
 		go s.SyncAccount(acc.ID)
+		go s.startIdleWatcher(acc.ID)
 	}
 
 	go func() {
@@ -46,6 +47,79 @@ func (s *syncManager) Start(ctx context.Context) {
 			}
 		}
 	}()
+}
+
+func (s *syncManager) startIdleWatcher(accountID string) {
+	const backoff = 3 * time.Second
+	for {
+		if s.ctx.Err() != nil {
+			return
+		}
+
+		acc, err := s.accounts.getByID(accountID)
+		if err != nil {
+			return
+		}
+		pwd, err := s.accounts.getPassword(accountID)
+		if err != nil {
+			return
+		}
+
+		err = s.idleLoop(*acc, pwd)
+		if s.ctx.Err() != nil {
+			return
+		}
+		if err != nil {
+			fmt.Printf("[idle] %s: error: %v — retrying in %s\n", acc.Email, err, backoff)
+			time.Sleep(backoff)
+		}
+	}
+}
+
+func (s *syncManager) idleLoop(acc Account, password string) error {
+	c, err := openIMAPClient(acc.IMAP, password, 0)
+	if err != nil {
+		return err
+	}
+	defer c.Logout() //nolint:errcheck
+
+	updates := make(chan client.Update, 10)
+	c.Updates = updates
+
+	mbox, err := c.Select("INBOX", false)
+	if err != nil {
+		return err
+	}
+	known := mbox.Messages
+	fmt.Printf("[idle] %s: watching INBOX (current: %d messages)\n", acc.Email, known)
+
+	stop := make(chan struct{})
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Idle(stop, nil)
+	}()
+
+	for {
+		select {
+		case update := <-updates:
+			if u, ok := update.(*client.MailboxUpdate); ok {
+				if u.Mailbox.Messages > known {
+					fmt.Printf("[idle] %s: new messages detected (%d → %d), triggering sync\n", acc.Email, known, u.Mailbox.Messages)
+					close(stop)
+					<-done
+					go s.SyncAccount(acc.ID)
+					return nil
+				}
+				known = u.Mailbox.Messages
+			}
+		case err := <-done:
+			return err
+		case <-s.ctx.Done():
+			close(stop)
+			<-done
+			return nil
+		}
+	}
 }
 
 type syncStatus struct {
@@ -185,7 +259,9 @@ func (s *syncManager) SyncAccount(accountID string) {
 				for _, b := range myBatches {
 					fmt.Printf("[sync] folder %q: fetching seq %d-%d\n", f.ID, b.start, b.end)
 					fetchT := time.Now()
-					emails, err := fetchEnvelopesForRange(conn, f.ID, uint32(b.start), uint32(b.end), accountID)
+					seqStart := uint32(cachedCount) + uint32(b.start)
+					seqEnd := uint32(cachedCount) + uint32(b.end)
+					emails, err := fetchEnvelopesForRange(conn, f.ID, seqStart, seqEnd, accountID)
 					if err != nil {
 						fmt.Printf("[sync] folder %q: fetch failed for seq %d-%d after %s: %v — reconnecting\n", f.ID, b.start, b.end, time.Since(fetchT), err)
 						conn.Logout() //nolint:errcheck
@@ -201,7 +277,7 @@ func (s *syncManager) SyncAccount(accountID string) {
 							resultCh <- batchResult{nil, err, b.start, b.end}
 							return
 						}
-						emails, err = fetchEnvelopesForRange(conn, f.ID, uint32(b.start), uint32(b.end), accountID)
+						emails, err = fetchEnvelopesForRange(conn, f.ID, seqStart, seqEnd, accountID)
 						if err != nil {
 							fmt.Printf("[sync] folder %q: retry failed for seq %d-%d: %v\n", f.ID, b.start, b.end, err)
 							resultCh <- batchResult{nil, err, b.start, b.end}
