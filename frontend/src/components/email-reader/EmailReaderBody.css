@@ -1,7 +1,6 @@
 .reader-body-wrapper {
     flex: 1;
-    overflow-y: auto;
-    padding: var(--spacing-6);
+    overflow: hidden;
 }
 
 .reader-body-wrapper--loading {
@@ -24,66 +23,8 @@
 }
 
 .reader-body {
-    max-width: 680px;
-    color: var(--color-text-primary);
-    font-size: var(--font-size-md);
-    line-height: 1.7;
-}
-
-.reader-body p {
-    margin: 0 0 var(--spacing-4);
-    color: var(--color-text-primary);
-}
-
-.reader-body p:last-child {
-    margin-bottom: 0;
-}
-
-.reader-body ul,
-.reader-body ol {
-    margin: 0 0 var(--spacing-4);
-    padding-left: var(--spacing-5);
-    color: var(--color-text-primary);
-}
-
-.reader-body li {
-    margin-bottom: var(--spacing-1);
-}
-
-.reader-body a {
-    color: var(--color-accent-hover);
-    text-decoration: underline;
-    text-decoration-color: var(--color-accent-soft);
-}
-
-.reader-body a:hover {
-    color: var(--color-accent-hover);
-    text-decoration-color: var(--color-accent-hover);
-}
-
-.reader-body strong {
-    font-weight: 600;
-    color: var(--color-text-accent);
-}
-
-.reader-body em {
-    font-style: italic;
-    color: var(--color-text-secondary);
-}
-
-.reader-body code {
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
-    font-size: 0.9em;
-    background-color: var(--color-bg-hover);
-    border: 1px solid var(--color-border-subtle);
-    padding: 1px 5px;
-    border-radius: var(--radius-sm);
-    color: var(--color-text-primary);
-}
-
-.reader-body blockquote {
-    border-left: 3px solid var(--color-border-strong);
-    margin: 0 0 var(--spacing-4);
-    padding-left: var(--spacing-4);
-    color: var(--color-text-secondary);
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: none;
 }
