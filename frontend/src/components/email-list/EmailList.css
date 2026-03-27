@@ -10,7 +10,7 @@
 
 .email-list__items {
     flex: 1;
-    overflow-y: auto;
+    position: relative;
 }
 
 .email-list__empty {

@@ -1,3 +1,5 @@
+import { List, AutoSizer, ListRowProps } from 'react-virtualized'
+import 'react-virtualized/styles.css'
 import { EmailListItem as EmailListItemType, Folder } from '../../types/mail'
 import EmailListHeader from './EmailListHeader'
 import EmailListItem from './EmailListItem'
@@ -10,7 +12,22 @@ interface EmailListProps {
     onSelectEmail: (id: string) => void
 }
 
+const ROW_HEIGHT = 80
+
 export default function EmailList({ folder, emails, selectedEmailId, onSelectEmail }: EmailListProps) {
+    function rowRenderer({ index, key, style }: ListRowProps) {
+        const email = emails[index]
+        return (
+            <div key={key} style={style}>
+                <EmailListItem
+                    email={email}
+                    isSelected={email.id === selectedEmailId}
+                    onClick={() => onSelectEmail(email.id)}
+                />
+            </div>
+        )
+    }
+
     return (
         <div className="email-list">
             <EmailListHeader folderLabel={folder.label} emailCount={emails.length} />
@@ -18,14 +35,18 @@ export default function EmailList({ folder, emails, selectedEmailId, onSelectEma
                 {emails.length === 0 ? (
                     <div className="email-list__empty">No messages</div>
                 ) : (
-                    emails.map(email => (
-                        <EmailListItem
-                            key={email.id}
-                            email={email}
-                            isSelected={email.id === selectedEmailId}
-                            onClick={() => onSelectEmail(email.id)}
-                        />
-                    ))
+                    <AutoSizer>
+                        {({ width, height }) => (
+                            <List
+                                width={width}
+                                height={height}
+                                rowCount={emails.length}
+                                rowHeight={ROW_HEIGHT}
+                                rowRenderer={rowRenderer}
+                                overscanRowCount={5}
+                            />
+                        )}
+                    </AutoSizer>
                 )}
             </div>
         </div>
