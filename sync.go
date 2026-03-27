@@ -99,10 +99,10 @@ func (s *syncManager) SyncAccount(accountID string) {
 		}
 
 		synced := uint32(0)
-		for start := uint32(1); start <= total; start += batchSize {
-			end := start + batchSize - 1
-			if end > total {
-				end = total
+		for end := total; end >= 1; end -= batchSize {
+			start := uint32(1)
+			if end >= batchSize {
+				start = end - batchSize + 1
 			}
 
 			s.emitStatus(accountID, "syncing", fmt.Sprintf("Emails: %s (%d/%d)", f.Label, synced, total))
