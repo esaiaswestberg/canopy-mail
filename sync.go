@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/emersion/go-imap/client"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -29,6 +30,22 @@ func (s *syncManager) Start(ctx context.Context) {
 	for _, acc := range accs {
 		go s.SyncAccount(acc.ID)
 	}
+
+	go func() {
+		ticker := time.NewTicker(30 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				accs, _ := s.accounts.getAll()
+				for _, acc := range accs {
+					go s.SyncAccount(acc.ID)
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }
 
 type syncStatus struct {
@@ -51,6 +68,8 @@ func (s *syncManager) SyncAccount(accountID string) {
 		return
 	}
 
+	fmt.Printf("[sync] starting sync for account %s (%s:%d)\n", acc.Email, acc.IMAP.Host, acc.IMAP.Port)
+
 	pwd, err := s.accounts.getPassword(accountID)
 	if err != nil {
 		s.emitStatus(accountID, "error", "Auth error")
@@ -63,6 +82,7 @@ func (s *syncManager) SyncAccount(accountID string) {
 		s.emitStatus(accountID, "error", "Folder sync failed")
 		return
 	}
+	fmt.Printf("[sync] found %d folders\n", len(folders))
 
 	if err := s.cache.SaveFolders(accountID, folders); err != nil {
 		fmt.Printf("failed to save folders: %v\n", err)
@@ -71,86 +91,150 @@ func (s *syncManager) SyncAccount(accountID string) {
 	// Let frontend know folders are ready
 	runtime.EventsEmit(s.ctx, "cache:updated", map[string]string{"type": "folders", "accountId": accountID})
 
-	batchSize := uint32(50)
-	fetchTimeout := 2 * time.Minute
+	fetchTimeout := 5 * time.Minute
 
-	// Fetch all emails for each folder in batches
 	for _, f := range folders {
-		fmt.Printf("sync: starting folder %s\n", f.ID)
-		s.emitStatus(accountID, "syncing", fmt.Sprintf("Emails: %s", f.Label))
+		fmt.Printf("[sync] folder %q: checking\n", f.ID)
+		s.emitStatus(accountID, "syncing", fmt.Sprintf("Checking: %s", f.Label))
 
+		connectT := time.Now()
 		c, err := openIMAPClient(acc.IMAP, pwd, fetchTimeout)
 		if err != nil {
-			fmt.Printf("sync: failed to connect for %s: %v\n", f.ID, err)
+			fmt.Printf("[sync] folder %q: connect failed after %s: %v\n", f.ID, time.Since(connectT), err)
 			continue
 		}
+		fmt.Printf("[sync] folder %q: connected in %s\n", f.ID, time.Since(connectT))
 
-		mbox, err := c.Select(f.ID, true)
+		imapTotal, err := getIMAPTotal(c, f.ID)
 		if err != nil {
-			fmt.Printf("sync: failed to select folder %s: %v\n", f.ID, err)
+			fmt.Printf("[sync] folder %q: select failed: %v\n", f.ID, err)
 			c.Logout() //nolint:errcheck
 			continue
 		}
-		fmt.Printf("sync: folder %s has %d messages\n", f.ID, mbox.Messages)
-		total := mbox.Messages
-		if total == 0 {
-			fmt.Printf("sync: no messages for %s\n", f.ID)
+
+		cachedCount, err := s.cache.GetEmailCount(accountID, f.ID)
+		fmt.Printf("[sync] folder %q: server=%d cached=%d\n", f.ID, imapTotal, cachedCount)
+		if err == nil && uint32(cachedCount) == imapTotal {
+			fmt.Printf("[sync] folder %q: up to date, skipping\n", f.ID)
+			c.Logout() //nolint:errcheck
 			continue
 		}
 
-		synced := uint32(0)
-		for end := total; end >= 1; end -= batchSize {
-			start := uint32(1)
-			if end >= batchSize {
-				start = end - batchSize + 1
-			}
-
-			s.emitStatus(accountID, "syncing", fmt.Sprintf("Emails: %s (%d/%d)", f.Label, synced, total))
-			batchStart := time.Now()
-
-			emails, err := fetchEnvelopesForRange(c, f.ID, start, end, accountID)
-			if err != nil {
-				fmt.Printf("sync: failed to fetch emails for %s range %d-%d: %v\n", f.ID, start, end, err)
-				fmt.Printf("sync: retrying range %d-%d for %s\n", start, end, f.ID)
-
-				c.Logout() //nolint:errcheck
-				c, err = openIMAPClient(acc.IMAP, pwd, fetchTimeout)
-				if err != nil {
-					fmt.Printf("sync: reconnect failed for %s: %v\n", f.ID, err)
-					break
-				}
-				if _, err := c.Select(f.ID, true); err != nil {
-					fmt.Printf("sync: reselect failed for %s: %v\n", f.ID, err)
-					c.Logout() //nolint:errcheck
-					break
-				}
-
-				emails, err = fetchEnvelopesForRange(c, f.ID, start, end, accountID)
-				if err != nil {
-					fmt.Printf("sync: retry failed for %s range %d-%d: %v\n", f.ID, start, end, err)
-					c.Logout() //nolint:errcheck
-					break
-				}
-			}
-
-			if err := s.cache.SaveEmails(accountID, f.ID, emails); err != nil {
-				fmt.Printf("sync: failed to save emails for %s: %v\n", f.ID, err)
-			}
-
-			synced += uint32(len(emails))
-			fmt.Printf("sync: saved %d emails for %s range %d-%d in %s\n", len(emails), f.ID, start, end, time.Since(batchStart))
-
-			// Let frontend know this folder has emails ready
-			runtime.EventsEmit(s.ctx, "cache:updated", map[string]string{"type": "emails", "accountId": accountID, "folderId": f.ID})
-
-			// Sleep briefly to avoid hammering the IMAP server
-			time.Sleep(300 * time.Millisecond)
+		missing := int(imapTotal) - cachedCount
+		if missing <= 0 {
+			fmt.Printf("[sync] folder %q: nothing to fetch (possible deletions)\n", f.ID)
+			c.Logout() //nolint:errcheck
+			continue
 		}
 
-		fmt.Printf("sync: completed folder %s (%d/%d)\n", f.ID, synced, total)
-		c.Logout() //nolint:errcheck
+		const (
+			batchSize     = 50
+			pipelineWidth = 3
+		)
+		fmt.Printf("[sync] folder %q: fetching %d missing emails in batches of %d (pipeline=%d)\n", f.ID, missing, batchSize, pipelineWidth)
 
-		// Sleep briefly to avoid hammering the IMAP server
+		// Build the list of batches (newest-first: missing down to 1)
+		type batchRange struct{ start, end int }
+		var batches []batchRange
+		for end := missing; end >= 1; end -= batchSize {
+			start := end - batchSize + 1
+			if start < 1 {
+				start = 1
+			}
+			batches = append(batches, batchRange{start, end})
+		}
+
+		// Open additional connections (pipelineWidth - 1 extra; reuse c as the first)
+		conns := []*client.Client{c}
+		for i := 1; i < pipelineWidth && i < len(batches); i++ {
+			extra, err := openIMAPClient(acc.IMAP, pwd, fetchTimeout)
+			if err != nil {
+				fmt.Printf("[sync] folder %q: extra conn %d failed: %v — using %d connections\n", f.ID, i, err, len(conns))
+				break
+			}
+			if _, err = getIMAPTotal(extra, f.ID); err != nil {
+				fmt.Printf("[sync] folder %q: extra conn %d select failed: %v\n", f.ID, i, err)
+				extra.Logout() //nolint:errcheck
+				break
+			}
+			conns = append(conns, extra)
+		}
+		fmt.Printf("[sync] folder %q: using %d parallel connections\n", f.ID, len(conns))
+
+		type batchResult struct {
+			emails     []EmailDetail
+			err        error
+			start, end int
+		}
+
+		resultCh := make(chan batchResult, len(batches))
+		var wg sync.WaitGroup
+
+		// Distribute batches across connections round-robin; each connection
+		// fetches its assigned batches sequentially (one conn = one goroutine).
+		// On failure the goroutine reconnects once and retries before skipping.
+		for i, initialConn := range conns {
+			var myBatches []batchRange
+			for j := i; j < len(batches); j += len(conns) {
+				myBatches = append(myBatches, batches[j])
+			}
+			wg.Add(1)
+			go func(conn *client.Client, myBatches []batchRange) {
+				defer wg.Done()
+				defer conn.Logout() //nolint:errcheck
+				for _, b := range myBatches {
+					fmt.Printf("[sync] folder %q: fetching seq %d-%d\n", f.ID, b.start, b.end)
+					fetchT := time.Now()
+					emails, err := fetchEnvelopesForRange(conn, f.ID, uint32(b.start), uint32(b.end), accountID)
+					if err != nil {
+						fmt.Printf("[sync] folder %q: fetch failed for seq %d-%d after %s: %v — reconnecting\n", f.ID, b.start, b.end, time.Since(fetchT), err)
+						conn.Logout() //nolint:errcheck
+						conn, err = openIMAPClient(acc.IMAP, pwd, fetchTimeout)
+						if err != nil {
+							fmt.Printf("[sync] folder %q: reconnect failed: %v — worker stopping\n", f.ID, err)
+							resultCh <- batchResult{nil, err, b.start, b.end}
+							return
+						}
+						if _, err = getIMAPTotal(conn, f.ID); err != nil {
+							fmt.Printf("[sync] folder %q: reselect failed: %v — worker stopping\n", f.ID, err)
+							conn.Logout() //nolint:errcheck
+							resultCh <- batchResult{nil, err, b.start, b.end}
+							return
+						}
+						emails, err = fetchEnvelopesForRange(conn, f.ID, uint32(b.start), uint32(b.end), accountID)
+						if err != nil {
+							fmt.Printf("[sync] folder %q: retry failed for seq %d-%d: %v\n", f.ID, b.start, b.end, err)
+							resultCh <- batchResult{nil, err, b.start, b.end}
+							continue
+						}
+					}
+					fmt.Printf("[sync] folder %q: seq %d-%d fetched in %s\n", f.ID, b.start, b.end, time.Since(fetchT))
+					resultCh <- batchResult{emails, nil, b.start, b.end}
+				}
+			}(initialConn, myBatches)
+		}
+
+		go func() {
+			wg.Wait()
+			close(resultCh)
+		}()
+
+		synced := 0
+		for res := range resultCh {
+			if res.err != nil {
+				fmt.Printf("[sync] folder %q: skipping seq %d-%d due to error: %v\n", f.ID, res.start, res.end, res.err)
+				continue
+			}
+			if err := s.cache.SaveEmails(accountID, f.ID, res.emails); err != nil {
+				fmt.Printf("[sync] folder %q: save failed: %v\n", f.ID, err)
+			}
+			synced += len(res.emails)
+			fmt.Printf("[sync] folder %q: seq %d-%d saved (%d/%d total)\n", f.ID, res.start, res.end, synced, missing)
+			s.emitStatus(accountID, "syncing", fmt.Sprintf("Emails: %s (%d/%d)", f.Label, synced, missing))
+			runtime.EventsEmit(s.ctx, "cache:updated", map[string]string{"type": "emails", "accountId": accountID, "folderId": f.ID})
+		}
+
+		fmt.Printf("[sync] folder %q: done — %d new emails\n", f.ID, synced)
 		time.Sleep(500 * time.Millisecond)
 	}
 

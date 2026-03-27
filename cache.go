@@ -138,6 +138,16 @@ func (s *cacheService) GetEmails(accountID string, folderID string) ([]EmailList
 	return emails, nil
 }
 
+func (s *cacheService) GetEmailCount(accountID, folderID string) (int, error) {
+	var count int
+	err := s.db.QueryRow(
+		`SELECT COUNT(*) FROM emails WHERE account_id = ? AND folder_id = ?`,
+		accountID, folderID,
+	).Scan(&count)
+	return count, err
+}
+
+
 func (s *cacheService) UpdateEmailBody(accountID, folderID string, uid uint32, bodyHtml string) error {
 	_, err := s.db.Exec(`UPDATE emails SET body_html = ? WHERE account_id = ? AND folder_id = ? AND uid = ?`,
 		bodyHtml, accountID, folderID, uid)

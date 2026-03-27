@@ -239,6 +239,22 @@ func openIMAPClient(cfg ServerConfig, password string, timeout time.Duration) (*
 	return c, nil
 }
 
+// getIMAPTotal selects the folder (read-only) and returns the total message count.
+// The folder remains selected after this call.
+func getIMAPTotal(c *client.Client, folder string) (uint32, error) {
+	fmt.Printf("[imap] selecting %q\n", folder)
+	t := time.Now()
+	mbox, err := c.Select(folder, true)
+	if err != nil {
+		fmt.Printf("[imap] select %q failed after %s: %v\n", folder, time.Since(t), err)
+		return 0, err
+	}
+	fmt.Printf("[imap] select %q: %d messages, UIDValidity=%d (took %s)\n",
+		folder, mbox.Messages, mbox.UidValidity, time.Since(t))
+	return mbox.Messages, nil
+}
+
+
 func fetchEnvelopesForRange(c *client.Client, folder string, from uint32, to uint32, accountID string) ([]EmailDetail, error) {
 	startTime := time.Now()
 	fmt.Printf("imap: fetching envelopes %s range %d-%d\n", folder, from, to)
