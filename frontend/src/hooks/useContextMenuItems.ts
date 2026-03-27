@@ -16,7 +16,6 @@ import {
 } from 'lucide-react'
 import { createElement } from 'react'
 import { ContextMenuItem } from '../context/ContextMenuContext'
-import { mockFolders } from '../data/mockData'
 import { EmailListItem, Folder, FolderIcon } from '../types/mail'
 
 const folderIconMap: Record<FolderIcon, React.ElementType> = {
@@ -33,7 +32,7 @@ function icon(component: React.ElementType) {
     return createElement(component, { size: 13 })
 }
 
-export function useEmailContextMenuItems(email: EmailListItem): ContextMenuItem[] {
+export function useEmailContextMenuItems(email: EmailListItem, folders: Folder[]): ContextMenuItem[] {
     return [
         email.isRead
             ? {
@@ -85,9 +84,9 @@ export function useEmailContextMenuItems(email: EmailListItem): ContextMenuItem[
             type: 'submenu',
             label: 'Move to',
             icon: icon(FolderInput),
-            items: mockFolders
-                .filter(f => f.id !== email.folderId)
-                .map(f => ({
+            items: folders
+                .filter((f: Folder) => f.id !== email.folderId)
+                .map((f: Folder) => ({
                     type: 'action' as const,
                     label: f.label,
                     icon: icon(folderIconMap[f.icon]),

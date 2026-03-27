@@ -1,6 +1,6 @@
 import { Archive, Forward, Reply, Star, Trash2 } from 'lucide-react'
 import { EmailDetail } from '../../types/mail'
-import { formatTimestamp } from '../../data/mockData'
+import { formatTimestamp } from '../../utils/time'
 import './EmailReaderHeader.css'
 
 interface EmailReaderHeaderProps {

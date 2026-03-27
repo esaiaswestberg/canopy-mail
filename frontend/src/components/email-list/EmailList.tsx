@@ -7,6 +7,7 @@ import './EmailList.css'
 
 interface EmailListProps {
     folder: Folder
+    folders: Folder[]
     emails: EmailListItemType[]
     selectedEmailId: string | null
     onSelectEmail: (id: string) => void
@@ -14,13 +15,14 @@ interface EmailListProps {
 
 const ROW_HEIGHT = 80
 
-export default function EmailList({ folder, emails, selectedEmailId, onSelectEmail }: EmailListProps) {
+export default function EmailList({ folder, folders, emails, selectedEmailId, onSelectEmail }: EmailListProps) {
     function rowRenderer({ index, key, style }: ListRowProps) {
         const email = emails[index]
         return (
             <div key={key} style={style}>
                 <EmailListItem
                     email={email}
+                    folders={folders}
                     isSelected={email.id === selectedEmailId}
                     onClick={() => onSelectEmail(email.id)}
                 />

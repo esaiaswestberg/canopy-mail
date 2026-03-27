@@ -262,6 +262,7 @@ function App() {
                         />
                         <EmailList
                             folder={activeFolder}
+                            folders={folders}
                             emails={emails}
                             selectedEmailId={selectedEmailId}
                             onSelectEmail={setSelectedEmailId}
