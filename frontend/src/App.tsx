@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import './App.css'
 import Sidebar from './components/sidebar/Sidebar'
@@ -20,6 +20,7 @@ function App() {
     
     const [folders, setFolders] = useState<Folder[]>([])
     const [emails, setEmails] = useState<EmailListItem[]>([])
+    const emailsRef = useRef<EmailListItem[]>([])
     const [selectedEmailDetail, setSelectedEmailDetail] = useState<EmailDetail | null>(null)
 
     const [loadingFolders, setLoadingFolders] = useState(false)
@@ -60,7 +61,9 @@ function App() {
             } else if (data.type === 'emails' && selectedAccountId === data.accountId && selectedFolderId === data.folderId) {
                 // Refresh emails
                 GetEmails(data.accountId, data.folderId).then(res => {
-                    setEmails((res ?? []) as EmailListItem[])
+                    const list = (res ?? []) as EmailListItem[]
+                    emailsRef.current = list
+                    setEmails(list)
                 }).catch(console.error)
             }
         }
@@ -101,7 +104,9 @@ function App() {
         }
         setLoadingEmails(true)
         GetEmails(activeAccount.id, selectedFolderId).then(res => {
-            setEmails((res ?? []) as EmailListItem[])
+            const list = (res ?? []) as EmailListItem[]
+            emailsRef.current = list
+            setEmails(list)
         }).catch(console.error).finally(() => setLoadingEmails(false))
     }, [activeAccount?.id, selectedFolderId])
 
@@ -111,7 +116,7 @@ function App() {
             setLoadingBody(false)
             return
         }
-        const emailListItem = emails.find(e => e.id === selectedEmailId)
+        const emailListItem = emailsRef.current.find(e => e.id === selectedEmailId)
         if (!emailListItem) return
 
         const accountId = activeAccount.id
@@ -143,7 +148,7 @@ function App() {
         })
 
         return () => { cancelled = true }
-    }, [activeAccount?.id, selectedFolderId, selectedEmailId, emails])
+    }, [activeAccount?.id, selectedFolderId, selectedEmailId])
 
     const activeFolder = folders.find(f => f.id === selectedFolderId) || { id: selectedFolderId, label: selectedFolderId, icon: 'inbox', isSystem: false }
 
