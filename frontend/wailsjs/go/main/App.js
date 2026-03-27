@@ -30,6 +30,10 @@ export function GetFolders(arg1) {
   return window['go']['main']['App']['GetFolders'](arg1);
 }
 
+export function SaveAttachment(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveAttachment'](arg1, arg2, arg3);
+}
+
 export function UpdateAccount(arg1) {
   return window['go']['main']['App']['UpdateAccount'](arg1);
 }

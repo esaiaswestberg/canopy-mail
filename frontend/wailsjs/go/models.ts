@@ -102,6 +102,24 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class Attachment {
+	    name: string;
+	    contentType: string;
+	    size: number;
+	    data: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Attachment(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.contentType = source["contentType"];
+	        this.size = source["size"];
+	        this.data = source["data"];
+	    }
+	}
 	export class EmailSender {
 	    name: string;
 	    email: string;
@@ -131,6 +149,7 @@ export namespace main {
 	    bodyHtml: string;
 	    recipients: EmailSender[];
 	    cc: EmailSender[];
+	    attachments: Attachment[];
 	
 	    static createFrom(source: any = {}) {
 	        return new EmailDetail(source);
@@ -152,6 +171,7 @@ export namespace main {
 	        this.bodyHtml = source["bodyHtml"];
 	        this.recipients = this.convertValues(source["recipients"], EmailSender);
 	        this.cc = this.convertValues(source["cc"], EmailSender);
+	        this.attachments = this.convertValues(source["attachments"], Attachment);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

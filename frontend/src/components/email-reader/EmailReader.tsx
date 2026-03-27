@@ -2,6 +2,7 @@ import { Mail } from 'lucide-react'
 import { EmailDetail } from '../../types/mail'
 import EmailReaderHeader from './EmailReaderHeader'
 import EmailReaderBody from './EmailReaderBody'
+import EmailReaderAttachments from './EmailReaderAttachments'
 import './EmailReader.css'
 
 interface EmailReaderProps {
@@ -23,6 +24,9 @@ export default function EmailReader({ email, loadingBody }: EmailReaderProps) {
         <div className="email-reader">
             <EmailReaderHeader email={email} />
             <EmailReaderBody bodyHtml={email.bodyHtml} loading={loadingBody} />
+            {email.attachments && email.attachments.length > 0 && (
+                <EmailReaderAttachments attachments={email.attachments} />
+            )}
         </div>
     )
 }

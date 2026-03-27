@@ -47,11 +47,19 @@ type EmailListItem struct {
 	AccountID     string      `json:"accountId"`
 }
 
+type Attachment struct {
+	Name        string `json:"name"`
+	ContentType string `json:"contentType"`
+	Size        int    `json:"size"`
+	Data        []byte `json:"data"`
+}
+
 type EmailDetail struct {
 	EmailListItem
-	BodyHtml   string        `json:"bodyHtml"`
-	Recipients []EmailSender `json:"recipients"`
-	Cc         []EmailSender `json:"cc"`
+	BodyHtml    string       `json:"bodyHtml"`
+	Recipients  []EmailSender `json:"recipients"`
+	Cc          []EmailSender `json:"cc"`
+	Attachments []Attachment  `json:"attachments"`
 }
 
 // AddAccountRequest is sent by the frontend when the user completes the wizard.

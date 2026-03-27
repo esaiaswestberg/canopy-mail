@@ -387,6 +387,7 @@ func fetchEmailsWithBodyForRange(c *client.Client, folder string, from uint32, t
 		r := msg.GetBody(section)
 		var bodyHtml, bodyText string
 		cidMap := make(map[string]string)
+		var attachments []Attachment
 		if r != nil {
 			mr, err := mail.CreateReader(r)
 			if err == nil {
@@ -422,6 +423,16 @@ func fetchEmailsWithBodyForRange(c *client.Client, folder string, from uint32, t
 								cidMap[cid] = "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(b)
 							}
 						}
+						filename, _ := h.Filename()
+						if filename == "" {
+							filename = "attachment"
+						}
+						attachments = append(attachments, Attachment{
+							Name:        filename,
+							ContentType: contentType,
+							Size:        len(b),
+							Data:        b,
+						})
 					}
 				}
 			}
@@ -482,13 +493,14 @@ func fetchEmailsWithBodyForRange(c *client.Client, folder string, from uint32, t
 				Timestamp:     timestamp,
 				IsRead:        isRead,
 				IsStarred:     isStarred,
-				HasAttachment: false,
+				HasAttachment: len(attachments) > 0,
 				FolderID:      folder,
 				AccountID:     accountID,
 			},
-			BodyHtml:   bodyHtml,
-			Recipients: recipients,
-			Cc:         cc,
+			BodyHtml:    bodyHtml,
+			Recipients:  recipients,
+			Cc:          cc,
+			Attachments: attachments,
 		})
 	}
 
@@ -560,6 +572,7 @@ func getEmailDetail(cfg ServerConfig, password string, folder string, uid uint32
 	var bodyHtml string
 	var bodyText string
 	cidMap := make(map[string]string)
+	var attachments []Attachment
 
 	for {
 		p, err := mr.NextPart()
@@ -593,6 +606,16 @@ func getEmailDetail(cfg ServerConfig, password string, folder string, uid uint32
 					cidMap[cid] = "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(b)
 				}
 			}
+			filename, _ := h.Filename()
+			if filename == "" {
+				filename = "attachment"
+			}
+			attachments = append(attachments, Attachment{
+				Name:        filename,
+				ContentType: contentType,
+				Size:        len(b),
+				Data:        b,
+			})
 		}
 	}
 	bodyHtml = resolveCIDReferences(bodyHtml, cidMap)
@@ -651,13 +674,14 @@ func getEmailDetail(cfg ServerConfig, password string, folder string, uid uint32
 			Timestamp:     timestamp,
 			IsRead:        isRead,
 			IsStarred:     isStarred,
-			HasAttachment: false,
+			HasAttachment: len(attachments) > 0,
 			FolderID:      folder,
 			AccountID:     accountID,
 		},
-		BodyHtml:   bodyHtml,
-		Recipients: recipients,
-		Cc:         cc,
+		BodyHtml:    bodyHtml,
+		Recipients:  recipients,
+		Cc:          cc,
+		Attachments: attachments,
 	}
 
 	return detail, nil

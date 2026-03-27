@@ -1,0 +1,85 @@
+.reader-attachments {
+    padding: var(--spacing-3) var(--spacing-6);
+    border-top: 1px solid var(--color-border-subtle);
+    flex-shrink: 0;
+}
+
+.reader-attachments__list {
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing-2);
+    overflow-x: auto;
+    padding-bottom: var(--spacing-1);
+}
+
+.reader-attachments__list::-webkit-scrollbar {
+    height: 4px;
+}
+
+.reader-attachments__list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.reader-attachments__list::-webkit-scrollbar-thumb {
+    background: var(--color-border-subtle);
+    border-radius: 2px;
+}
+
+.reader-attachments__chip {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-3);
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-family: inherit;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+    max-width: 220px;
+}
+
+.reader-attachments__chip:hover {
+    background-color: var(--color-bg-hover);
+    border-color: var(--color-border-strong);
+}
+
+.reader-attachments__chip-icon {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.reader-attachments__chip-icon--download {
+    display: none;
+}
+
+.reader-attachments__chip:hover .reader-attachments__chip-icon--file {
+    display: none;
+}
+
+.reader-attachments__chip:hover .reader-attachments__chip-icon--download {
+    display: block;
+    color: var(--color-text-secondary);
+}
+
+.reader-attachments__chip-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.reader-attachments__chip-name {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reader-attachments__chip-size {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+

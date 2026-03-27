@@ -55,10 +55,18 @@ export interface EmailListItem {
     accountId: string
 }
 
+export interface Attachment {
+    name: string
+    contentType: string
+    size: number
+    data: number[]
+}
+
 export interface EmailDetail extends EmailListItem {
     bodyHtml: string
     recipients: EmailSender[]
     cc?: EmailSender[]
+    attachments?: Attachment[]
 }
 
 export interface SyncStatus {

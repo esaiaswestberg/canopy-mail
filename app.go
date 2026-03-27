@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App is the Wails application struct. Its exported methods are bound to the
@@ -122,32 +124,44 @@ func (a *App) GetEmailDetail(accountID string, folder string, uid uint32) (*Emai
 	return a.cache.GetEmailDetail(accountID, folder, uid)
 }
 
-// FetchEmailBody fetches the body of an email from IMAP, caches it, and returns the HTML.
-func (a *App) FetchEmailBody(accountID string, folder string, uid uint32) (string, error) {
+// FetchEmailBody fetches the full email detail from IMAP (body + attachments), caches it, and returns the detail.
+func (a *App) FetchEmailBody(accountID string, folder string, uid uint32) (*EmailDetail, error) {
 	if a.cache == nil || a.accounts == nil {
-		return "", fmt.Errorf("service not ready")
+		return nil, fmt.Errorf("service not ready")
 	}
 
 	acc, err := a.accounts.getByID(accountID)
 	if err != nil {
-		return "", fmt.Errorf("account not found: %w", err)
+		return nil, fmt.Errorf("account not found: %w", err)
 	}
 
 	pwd, err := a.accounts.getPassword(accountID)
 	if err != nil {
-		return "", fmt.Errorf("auth error: %w", err)
+		return nil, fmt.Errorf("auth error: %w", err)
 	}
 
 	detail, err := getEmailDetail(acc.IMAP, pwd, folder, uid, accountID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	if err := a.cache.UpdateEmailBody(accountID, folder, uid, detail.BodyHtml); err != nil {
-		fmt.Printf("[FetchEmailBody] failed to cache body for uid %d: %v\n", uid, err)
+	if err := a.cache.UpdateEmailDetail(accountID, folder, uid, detail.BodyHtml, detail.HasAttachment, detail.Attachments); err != nil {
+		fmt.Printf("[FetchEmailBody] failed to cache detail for uid %d: %v\n", uid, err)
 	}
 
-	return detail.BodyHtml, nil
+	return detail, nil
+}
+
+// SaveAttachment shows a native save dialog and writes the attachment data to the chosen path.
+func (a *App) SaveAttachment(name, contentType string, data []byte) error {
+	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		DefaultFilename: name,
+		Title:           "Save Attachment",
+	})
+	if err != nil || savePath == "" {
+		return err
+	}
+	return os.WriteFile(savePath, data, 0644)
 }
 
 // appDataDir returns the platform-appropriate directory for storing app data.

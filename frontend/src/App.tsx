@@ -133,9 +133,13 @@ function App() {
             setSelectedEmailDetail(detail)
             if (!detail.bodyHtml || detail.bodyHtml.includes('cid:')) {
                 setLoadingBody(true)
-                FetchEmailBody(accountId, folderId, uid).then(bodyHtml => {
+                FetchEmailBody(accountId, folderId, uid).then(freshDetail => {
                     if (!cancelled) {
-                        setSelectedEmailDetail(prev => prev ? { ...prev, bodyHtml } : prev)
+                        setSelectedEmailDetail(prev => prev ? {
+                            ...prev,
+                            bodyHtml: freshDetail.bodyHtml,
+                            attachments: freshDetail.attachments,
+                        } : prev)
                     }
                 }).catch(console.error).finally(() => {
                     if (!cancelled) {
