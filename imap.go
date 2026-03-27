@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net"
@@ -78,6 +79,13 @@ func dialIMAP(cfg ServerConfig) (*client.Client, error) {
 	default:
 		return nil, fmt.Errorf("unknown security type: %q", cfg.Security)
 	}
+}
+
+func resolveCIDReferences(html string, cidMap map[string]string) string {
+	for cid, dataURI := range cidMap {
+		html = strings.ReplaceAll(html, "cid:"+cid, dataURI)
+	}
+	return html
 }
 
 func getFolders(cfg ServerConfig, password string) ([]Folder, error) {
@@ -378,6 +386,7 @@ func fetchEmailsWithBodyForRange(c *client.Client, folder string, from uint32, t
 	for msg := range messages {
 		r := msg.GetBody(section)
 		var bodyHtml, bodyText string
+		cidMap := make(map[string]string)
 		if r != nil {
 			mr, err := mail.CreateReader(r)
 			if err == nil {
@@ -398,11 +407,26 @@ func fetchEmailsWithBodyForRange(c *client.Client, folder string, from uint32, t
 							bodyHtml = string(b)
 						} else if contentType == "text/plain" {
 							bodyText = string(b)
+						} else if strings.HasPrefix(contentType, "image/") {
+							if rawCID := h.Get("Content-Id"); rawCID != "" {
+								cid := strings.Trim(rawCID, "<>")
+								cidMap[cid] = "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(b)
+							}
+						}
+					case *mail.AttachmentHeader:
+						b, _ := io.ReadAll(p.Body)
+						contentType, _, _ := h.ContentType()
+						if strings.HasPrefix(contentType, "image/") {
+							if rawCID := h.Get("Content-Id"); rawCID != "" {
+								cid := strings.Trim(rawCID, "<>")
+								cidMap[cid] = "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(b)
+							}
 						}
 					}
 				}
 			}
 		}
+		bodyHtml = resolveCIDReferences(bodyHtml, cidMap)
 
 		if bodyHtml == "" && bodyText != "" {
 			bodyHtml = "<p>" + strings.ReplaceAll(bodyText, "\n", "<br>") + "</p>"
@@ -535,6 +559,7 @@ func getEmailDetail(cfg ServerConfig, password string, folder string, uid uint32
 
 	var bodyHtml string
 	var bodyText string
+	cidMap := make(map[string]string)
 
 	for {
 		p, err := mr.NextPart()
@@ -553,9 +578,25 @@ func getEmailDetail(cfg ServerConfig, password string, folder string, uid uint32
 				bodyHtml = string(b)
 			} else if contentType == "text/plain" {
 				bodyText = string(b)
+			} else if strings.HasPrefix(contentType, "image/") {
+				if rawCID := h.Get("Content-Id"); rawCID != "" {
+					cid := strings.Trim(rawCID, "<>")
+					cidMap[cid] = "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(b)
+				}
+			}
+		case *mail.AttachmentHeader:
+			b, _ := io.ReadAll(p.Body)
+			contentType, _, _ := h.ContentType()
+			if strings.HasPrefix(contentType, "image/") {
+				if rawCID := h.Get("Content-Id"); rawCID != "" {
+					cid := strings.Trim(rawCID, "<>")
+					cidMap[cid] = "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(b)
+				}
 			}
 		}
 	}
+	bodyHtml = resolveCIDReferences(bodyHtml, cidMap)
+	fmt.Printf("[getEmailDetail] uid=%d cidMap=%d keys\n", msg.Uid, len(cidMap))
 
 	if bodyHtml == "" && bodyText != "" {
 		bodyHtml = "<p>" + strings.ReplaceAll(bodyText, "\n", "<br>") + "</p>"

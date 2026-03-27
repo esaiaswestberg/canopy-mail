@@ -131,7 +131,7 @@ function App() {
             if (cancelled) return
             const detail = res as EmailDetail
             setSelectedEmailDetail(detail)
-            if (!detail.bodyHtml) {
+            if (!detail.bodyHtml || detail.bodyHtml.includes('cid:')) {
                 setLoadingBody(true)
                 FetchEmailBody(accountId, folderId, uid).then(bodyHtml => {
                     if (!cancelled) {
