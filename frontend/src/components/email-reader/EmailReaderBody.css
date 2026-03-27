@@ -5,14 +5,14 @@
 
 .reader-body-wrapper--loading {
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: center;
 }
 
 .reader-body-spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--color-border-subtle);
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-border-subtle);
     border-top-color: var(--color-accent-hover);
     border-radius: 50%;
     animation: reader-spin 0.7s linear infinite;
