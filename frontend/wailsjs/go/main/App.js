@@ -10,6 +10,10 @@ export function DeleteAccount(arg1) {
   return window['go']['main']['App']['DeleteAccount'](arg1);
 }
 
+export function FetchEmailBody(arg1, arg2, arg3) {
+  return window['go']['main']['App']['FetchEmailBody'](arg1, arg2, arg3);
+}
+
 export function GetAccounts() {
   return window['go']['main']['App']['GetAccounts']();
 }

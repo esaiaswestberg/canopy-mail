@@ -6,6 +6,8 @@ export function AddAccount(arg1:main.AddAccountRequest):Promise<main.Account>;
 
 export function DeleteAccount(arg1:string):Promise<void>;
 
+export function FetchEmailBody(arg1:string,arg2:string,arg3:number):Promise<string>;
+
 export function GetAccounts():Promise<Array<main.Account>>;
 
 export function GetEmailDetail(arg1:string,arg2:string,arg3:number):Promise<main.EmailDetail>;

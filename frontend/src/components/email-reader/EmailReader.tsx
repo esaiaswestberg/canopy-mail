@@ -6,9 +6,10 @@ import './EmailReader.css'
 
 interface EmailReaderProps {
     email: EmailDetail | null
+    loadingBody: boolean
 }
 
-export default function EmailReader({ email }: EmailReaderProps) {
+export default function EmailReader({ email, loadingBody }: EmailReaderProps) {
     if (!email) {
         return (
             <div className="email-reader email-reader--empty">
@@ -21,7 +22,7 @@ export default function EmailReader({ email }: EmailReaderProps) {
     return (
         <div className="email-reader">
             <EmailReaderHeader email={email} />
-            <EmailReaderBody bodyHtml={email.bodyHtml} />
+            <EmailReaderBody bodyHtml={email.bodyHtml} loading={loadingBody} />
         </div>
     )
 }

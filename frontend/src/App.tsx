@@ -6,10 +6,11 @@ import EmailList from './components/email-list/EmailList'
 import EmailReader from './components/email-reader/EmailReader'
 import ContextMenu from './components/context-menu/ContextMenu'
 import SettingsModal from './components/settings/SettingsModal'
-import { Account, EmailDetail, EmailListItem, Folder } from './types/mail'
+import { Account, EmailDetail, EmailListItem, Folder, SyncStatus } from './types/mail'
 import { ContextMenuContext, ContextMenuState, ContextMenuItem } from './context/ContextMenuContext'
-import { GetAccounts, UpdateAccount, DeleteAccount, GetFolders, GetEmails, GetEmailDetail } from '../wailsjs/go/main/App'
+import { GetAccounts, UpdateAccount, DeleteAccount, GetFolders, GetEmails, GetEmailDetail, FetchEmailBody } from '../wailsjs/go/main/App'
 import { main as WailsModels } from '../wailsjs/go/models'
+import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime'
 
 function App() {
     const [accounts, setAccounts] = useState<Account[]>([])
@@ -24,6 +25,9 @@ function App() {
     const [loadingFolders, setLoadingFolders] = useState(false)
     const [loadingEmails, setLoadingEmails] = useState(false)
     const [loadingDetail, setLoadingDetail] = useState(false)
+    const [loadingBody, setLoadingBody] = useState(false)
+
+    const [syncStatuses, setSyncStatuses] = useState<Record<string, SyncStatus>>({})
 
     const [menuState, setMenuState] = useState<ContextMenuState | null>(null)
     const [settingsOpen, setSettingsOpen] = useState(false)
@@ -38,6 +42,36 @@ function App() {
             }
         }).catch(console.error)
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        const onSyncStatus = (status: SyncStatus) => {
+            setSyncStatuses(prev => ({
+                ...prev,
+                [status.accountId]: status
+            }))
+        }
+
+        const onCacheUpdated = (data: { type: string, accountId: string, folderId?: string }) => {
+            if (data.type === 'folders' && selectedAccountId === data.accountId) {
+                // Refresh folders
+                GetFolders(data.accountId).then(res => {
+                    setFolders((res ?? []) as Folder[])
+                }).catch(console.error)
+            } else if (data.type === 'emails' && selectedAccountId === data.accountId && selectedFolderId === data.folderId) {
+                // Refresh emails
+                GetEmails(data.accountId, data.folderId).then(res => {
+                    setEmails((res ?? []) as EmailListItem[])
+                }).catch(console.error)
+            }
+        }
+
+        EventsOn('sync:status', onSyncStatus)
+        EventsOn('cache:updated', onCacheUpdated)
+
+        return () => {
+            EventsOff('sync:status', 'cache:updated')
+        }
+    }, [selectedAccountId, selectedFolderId])
 
     const activeAccount = accounts.find(a => a.id === selectedAccountId) ?? accounts[0] ?? null
 
@@ -74,15 +108,41 @@ function App() {
     useEffect(() => {
         if (!activeAccount || !selectedFolderId || !selectedEmailId) {
             setSelectedEmailDetail(null)
+            setLoadingBody(false)
             return
         }
         const emailListItem = emails.find(e => e.id === selectedEmailId)
         if (!emailListItem) return
 
+        const accountId = activeAccount.id
+        const folderId = selectedFolderId
+        const uid = emailListItem.uid || parseInt(emailListItem.id)
+
+        let cancelled = false
+
         setLoadingDetail(true)
-        GetEmailDetail(activeAccount.id, selectedFolderId, emailListItem.uid || parseInt(emailListItem.id)).then(res => {
-            setSelectedEmailDetail(res as EmailDetail)
-        }).catch(console.error).finally(() => setLoadingDetail(false))
+        setLoadingBody(false)
+        GetEmailDetail(accountId, folderId, uid).then(res => {
+            if (cancelled) return
+            const detail = res as EmailDetail
+            setSelectedEmailDetail(detail)
+            if (!detail.bodyHtml) {
+                setLoadingBody(true)
+                FetchEmailBody(accountId, folderId, uid).then(bodyHtml => {
+                    if (!cancelled) {
+                        setSelectedEmailDetail(prev => prev ? { ...prev, bodyHtml } : prev)
+                    }
+                }).catch(console.error).finally(() => {
+                    if (!cancelled) {
+                        setLoadingBody(false)
+                    }
+                })
+            }
+        }).catch(console.error).finally(() => {
+            if (!cancelled) setLoadingDetail(false)
+        })
+
+        return () => { cancelled = true }
     }, [activeAccount?.id, selectedFolderId, selectedEmailId, emails])
 
     const activeFolder = folders.find(f => f.id === selectedFolderId) || { id: selectedFolderId, label: selectedFolderId, icon: 'inbox', isSystem: false }
@@ -159,6 +219,7 @@ function App() {
                             selectedFolderId={selectedFolderId}
                             onSelectFolder={handleSelectFolder}
                             onOpenSettings={() => setSettingsOpen(true)}
+                            syncStatus={syncStatuses[activeAccount.id]}
                         />
                         <EmailList
                             folder={activeFolder}
@@ -166,7 +227,7 @@ function App() {
                             selectedEmailId={selectedEmailId}
                             onSelectEmail={setSelectedEmailId}
                         />
-                        <EmailReader email={selectedEmailDetail} />
+                        <EmailReader email={selectedEmailDetail} loadingBody={loadingBody} />
                     </>
                 ) : (
                     <div className="app-empty">

@@ -60,3 +60,9 @@ export interface EmailDetail extends EmailListItem {
     recipients: EmailSender[]
     cc?: EmailSender[]
 }
+
+export interface SyncStatus {
+    accountId: string
+    status: 'syncing' | 'idle' | 'error'
+    progress: string
+}

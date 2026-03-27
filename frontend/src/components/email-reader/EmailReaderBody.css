@@ -4,6 +4,25 @@
     padding: var(--spacing-6);
 }
 
+.reader-body-wrapper--loading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.reader-body-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-border-subtle);
+    border-top-color: var(--color-accent-hover);
+    border-radius: 50%;
+    animation: reader-spin 0.7s linear infinite;
+}
+
+@keyframes reader-spin {
+    to { transform: rotate(360deg); }
+}
+
 .reader-body {
     max-width: 680px;
     color: var(--color-text-primary);

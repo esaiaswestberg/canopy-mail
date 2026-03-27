@@ -10,6 +10,7 @@ import (
 
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/client"
+	_ "github.com/emersion/go-message/charset"
 	"github.com/emersion/go-message/mail"
 )
 
@@ -223,6 +224,248 @@ func getEmails(cfg ServerConfig, password string, folder string, accountID strin
 	return emails, nil
 }
 
+func openIMAPClient(cfg ServerConfig, password string, timeout time.Duration) (*client.Client, error) {
+	c, err := dialIMAP(cfg)
+	if err != nil {
+		return nil, err
+	}
+	c.Timeout = timeout
+
+	if err := c.Login(cfg.Username, password); err != nil {
+		c.Logout() //nolint:errcheck
+		return nil, err
+	}
+
+	return c, nil
+}
+
+func fetchEnvelopesForRange(c *client.Client, folder string, from uint32, to uint32, accountID string) ([]EmailDetail, error) {
+	startTime := time.Now()
+	fmt.Printf("imap: fetching envelopes %s range %d-%d\n", folder, from, to)
+
+	seqset := new(imap.SeqSet)
+	seqset.AddRange(from, to)
+
+	items := []imap.FetchItem{imap.FetchEnvelope, imap.FetchFlags, imap.FetchUid}
+	buffer := int(to - from + 1)
+	if buffer > 200 {
+		buffer = 200
+	}
+	if buffer < 1 {
+		buffer = 1
+	}
+	messages := make(chan *imap.Message, buffer)
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Fetch(seqset, items, messages)
+	}()
+
+	var emails []EmailDetail
+	for msg := range messages {
+		isRead := false
+		isStarred := false
+		for _, flag := range msg.Flags {
+			if flag == imap.SeenFlag {
+				isRead = true
+			}
+			if flag == imap.FlaggedFlag {
+				isStarred = true
+			}
+		}
+
+		var sender EmailSender
+		if len(msg.Envelope.From) > 0 {
+			sender.Name = msg.Envelope.From[0].PersonalName
+			if sender.Name == "" {
+				sender.Name = msg.Envelope.From[0].MailboxName
+			}
+			sender.Email = msg.Envelope.From[0].MailboxName + "@" + msg.Envelope.From[0].HostName
+		}
+
+		var recipients []EmailSender
+		for _, to := range msg.Envelope.To {
+			recipients = append(recipients, EmailSender{
+				Name:  to.PersonalName,
+				Email: to.MailboxName + "@" + to.HostName,
+			})
+		}
+
+		var cc []EmailSender
+		for _, to := range msg.Envelope.Cc {
+			cc = append(cc, EmailSender{
+				Name:  to.PersonalName,
+				Email: to.MailboxName + "@" + to.HostName,
+			})
+		}
+
+		timestamp := ""
+		if !msg.Envelope.Date.IsZero() {
+			timestamp = msg.Envelope.Date.Format(time.RFC3339)
+		}
+
+		emails = append(emails, EmailDetail{
+			EmailListItem: EmailListItem{
+				ID:            fmt.Sprintf("%d", msg.Uid),
+				UID:           msg.Uid,
+				Sender:        sender,
+				Subject:       msg.Envelope.Subject,
+				Timestamp:     timestamp,
+				IsRead:        isRead,
+				IsStarred:     isStarred,
+				HasAttachment: false,
+				FolderID:      folder,
+				AccountID:     accountID,
+			},
+			BodyHtml:   "",
+			Recipients: recipients,
+			Cc:         cc,
+		})
+	}
+
+	if err := <-done; err != nil {
+		return nil, err
+	}
+
+	// Reverse to get newest first
+	for i, j := 0, len(emails)-1; i < j; i, j = i+1, j-1 {
+		emails[i], emails[j] = emails[j], emails[i]
+	}
+
+	fmt.Printf("imap: fetched %d envelopes for %s range %d-%d in %s\n", len(emails), folder, from, to, time.Since(startTime))
+
+	return emails, nil
+}
+
+func fetchEmailsWithBodyForRange(c *client.Client, folder string, from uint32, to uint32, accountID string) ([]EmailDetail, error) {
+	startTime := time.Now()
+	fmt.Printf("imap: fetching %s range %d-%d\n", folder, from, to)
+
+	seqset := new(imap.SeqSet)
+	seqset.AddRange(from, to)
+
+	section := &imap.BodySectionName{}
+	items := []imap.FetchItem{imap.FetchEnvelope, imap.FetchFlags, imap.FetchUid, section.FetchItem()}
+	buffer := int(to - from + 1)
+	if buffer > 200 {
+		buffer = 200
+	}
+	if buffer < 1 {
+		buffer = 1
+	}
+	messages := make(chan *imap.Message, buffer)
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Fetch(seqset, items, messages)
+	}()
+
+	var emails []EmailDetail
+	for msg := range messages {
+		r := msg.GetBody(section)
+		var bodyHtml, bodyText string
+		if r != nil {
+			mr, err := mail.CreateReader(r)
+			if err == nil {
+				for {
+					p, err := mr.NextPart()
+					if err == io.EOF {
+						break
+					} else if err != nil {
+						fmt.Printf("Error reading part for UID %d: %v\n", msg.Uid, err)
+						break
+					}
+
+					switch h := p.Header.(type) {
+					case *mail.InlineHeader:
+						b, _ := io.ReadAll(p.Body)
+						contentType, _, _ := h.ContentType()
+						if contentType == "text/html" {
+							bodyHtml = string(b)
+						} else if contentType == "text/plain" {
+							bodyText = string(b)
+						}
+					}
+				}
+			}
+		}
+
+		if bodyHtml == "" && bodyText != "" {
+			bodyHtml = "<p>" + strings.ReplaceAll(bodyText, "\n", "<br>") + "</p>"
+		}
+
+		isRead := false
+		isStarred := false
+		for _, flag := range msg.Flags {
+			if flag == imap.SeenFlag {
+				isRead = true
+			}
+			if flag == imap.FlaggedFlag {
+				isStarred = true
+			}
+		}
+
+		var sender EmailSender
+		if len(msg.Envelope.From) > 0 {
+			sender.Name = msg.Envelope.From[0].PersonalName
+			if sender.Name == "" {
+				sender.Name = msg.Envelope.From[0].MailboxName
+			}
+			sender.Email = msg.Envelope.From[0].MailboxName + "@" + msg.Envelope.From[0].HostName
+		}
+
+		var recipients []EmailSender
+		for _, to := range msg.Envelope.To {
+			recipients = append(recipients, EmailSender{
+				Name:  to.PersonalName,
+				Email: to.MailboxName + "@" + to.HostName,
+			})
+		}
+
+		var cc []EmailSender
+		for _, to := range msg.Envelope.Cc {
+			cc = append(cc, EmailSender{
+				Name:  to.PersonalName,
+				Email: to.MailboxName + "@" + to.HostName,
+			})
+		}
+
+		timestamp := ""
+		if !msg.Envelope.Date.IsZero() {
+			timestamp = msg.Envelope.Date.Format(time.RFC3339)
+		}
+
+		emails = append(emails, EmailDetail{
+			EmailListItem: EmailListItem{
+				ID:            fmt.Sprintf("%d", msg.Uid),
+				UID:           msg.Uid,
+				Sender:        sender,
+				Subject:       msg.Envelope.Subject,
+				Timestamp:     timestamp,
+				IsRead:        isRead,
+				IsStarred:     isStarred,
+				HasAttachment: false,
+				FolderID:      folder,
+				AccountID:     accountID,
+			},
+			BodyHtml:   bodyHtml,
+			Recipients: recipients,
+			Cc:         cc,
+		})
+	}
+
+	if err := <-done; err != nil {
+		return nil, err
+	}
+
+	// Reverse to get newest first
+	for i, j := 0, len(emails)-1; i < j; i, j = i+1, j-1 {
+		emails[i], emails[j] = emails[j], emails[i]
+	}
+
+	fmt.Printf("imap: fetched %d messages for %s range %d-%d in %s\n", len(emails), folder, from, to, time.Since(startTime))
+
+	return emails, nil
+}
+
 func getEmailDetail(cfg ServerConfig, password string, folder string, uid uint32, accountID string) (*EmailDetail, error) {
 	c, err := dialIMAP(cfg)
 	if err != nil {
@@ -282,7 +525,8 @@ func getEmailDetail(cfg ServerConfig, password string, folder string, uid uint32
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			continue
+			fmt.Printf("Error reading part for UID %d: %v\n", msg.Uid, err)
+			break
 		}
 
 		switch h := p.Header.(type) {

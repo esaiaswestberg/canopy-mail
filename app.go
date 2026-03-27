@@ -14,6 +14,8 @@ type App struct {
 	ctx      context.Context
 	db       *sql.DB
 	accounts *accountService
+	cache    *cacheService
+	syncer   *syncManager
 }
 
 func NewApp() *App {
@@ -43,6 +45,10 @@ func (a *App) startup(ctx context.Context) {
 	}
 
 	a.accounts = newAccountService(db, key)
+	a.cache = newCacheService(db)
+	a.syncer = newSyncManager(a.accounts, a.cache)
+
+	a.syncer.Start(ctx)
 }
 
 // GetAccounts returns all stored accounts (without passwords).
@@ -66,7 +72,14 @@ func (a *App) AddAccount(req AddAccountRequest) (*Account, error) {
 	if a.accounts == nil {
 		return nil, fmt.Errorf("service not ready")
 	}
-	return a.accounts.add(req)
+	acc, err := a.accounts.add(req)
+	if err != nil {
+		return nil, err
+	}
+	if a.syncer != nil {
+		go a.syncer.SyncAccount(acc.ID)
+	}
+	return acc, nil
 }
 
 // UpdateAccount updates a stored account's metadata (never the password).
@@ -87,50 +100,54 @@ func (a *App) DeleteAccount(id string) error {
 
 // GetFolders fetches IMAP folders for an account.
 func (a *App) GetFolders(accountID string) ([]Folder, error) {
-	if a.accounts == nil {
+	if a.cache == nil {
 		return nil, fmt.Errorf("service not ready")
 	}
-	acc, err := a.accounts.getByID(accountID)
-	if err != nil {
-		return nil, err
-	}
-	pwd, err := a.accounts.getPassword(accountID)
-	if err != nil {
-		return nil, err
-	}
-	return getFolders(acc.IMAP, pwd)
+	return a.cache.GetFolders(accountID)
 }
 
 // GetEmails fetches recent emails for a folder.
 func (a *App) GetEmails(accountID string, folder string) ([]EmailListItem, error) {
-	if a.accounts == nil {
+	if a.cache == nil {
 		return nil, fmt.Errorf("service not ready")
 	}
-	acc, err := a.accounts.getByID(accountID)
-	if err != nil {
-		return nil, err
-	}
-	pwd, err := a.accounts.getPassword(accountID)
-	if err != nil {
-		return nil, err
-	}
-	return getEmails(acc.IMAP, pwd, folder, accountID)
+	return a.cache.GetEmails(accountID, folder)
 }
 
-// GetEmailDetail fetches the full content of an email by UID.
+// GetEmailDetail fetches the full content of an email by UID from the local cache.
 func (a *App) GetEmailDetail(accountID string, folder string, uid uint32) (*EmailDetail, error) {
-	if a.accounts == nil {
+	if a.cache == nil {
 		return nil, fmt.Errorf("service not ready")
 	}
+	return a.cache.GetEmailDetail(accountID, folder, uid)
+}
+
+// FetchEmailBody fetches the body of an email from IMAP, caches it, and returns the HTML.
+func (a *App) FetchEmailBody(accountID string, folder string, uid uint32) (string, error) {
+	if a.cache == nil || a.accounts == nil {
+		return "", fmt.Errorf("service not ready")
+	}
+
 	acc, err := a.accounts.getByID(accountID)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("account not found: %w", err)
 	}
+
 	pwd, err := a.accounts.getPassword(accountID)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("auth error: %w", err)
 	}
-	return getEmailDetail(acc.IMAP, pwd, folder, uid, accountID)
+
+	detail, err := getEmailDetail(acc.IMAP, pwd, folder, uid, accountID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := a.cache.UpdateEmailBody(accountID, folder, uid, detail.BodyHtml); err != nil {
+		fmt.Printf("[FetchEmailBody] failed to cache body for uid %d: %v\n", uid, err)
+	}
+
+	return detail.BodyHtml, nil
 }
 
 // appDataDir returns the platform-appropriate directory for storing app data.
