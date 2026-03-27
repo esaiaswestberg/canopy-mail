@@ -596,7 +596,6 @@ func getEmailDetail(cfg ServerConfig, password string, folder string, uid uint32
 		}
 	}
 	bodyHtml = resolveCIDReferences(bodyHtml, cidMap)
-	fmt.Printf("[getEmailDetail] uid=%d cidMap=%d keys\n", msg.Uid, len(cidMap))
 
 	if bodyHtml == "" && bodyText != "" {
 		bodyHtml = "<p>" + strings.ReplaceAll(bodyText, "\n", "<br>") + "</p>"
