@@ -1,4 +1,4 @@
-import { Settings, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react'
+import { Settings, RefreshCw, AlertCircle, Pencil } from 'lucide-react'
 import { Account, Folder, SyncStatus } from '../../types/mail'
 import AccountSwitcher from './AccountSwitcher'
 import FolderTree from './FolderTree'
@@ -12,13 +12,20 @@ interface SidebarProps {
     selectedFolderId: string
     onSelectFolder: (id: string) => void
     onOpenSettings: () => void
+    onCompose: () => void
     syncStatus?: SyncStatus
 }
 
-export default function Sidebar({ accounts, activeAccount, onSelectAccount, folders, selectedFolderId, onSelectFolder, onOpenSettings, syncStatus }: SidebarProps) {
+export default function Sidebar({ accounts, activeAccount, onSelectAccount, folders, selectedFolderId, onSelectFolder, onOpenSettings, onCompose, syncStatus }: SidebarProps) {
     return (
         <aside className="sidebar">
             <AccountSwitcher accounts={accounts} activeAccount={activeAccount} onSelectAccount={onSelectAccount} onOpenSettings={onOpenSettings} />
+            <div className="sidebar__compose-wrap">
+                <button className="sidebar__compose-btn" onClick={onCompose}>
+                    <Pencil size={14} />
+                    Compose
+                </button>
+            </div>
             <FolderTree
                 folders={folders}
                 selectedFolderId={selectedFolderId}

@@ -5,9 +5,11 @@ import './EmailReaderHeader.css'
 
 interface EmailReaderHeaderProps {
     email: EmailDetail
+    onReply: () => void
+    onForward: () => void
 }
 
-export default function EmailReaderHeader({ email }: EmailReaderHeaderProps) {
+export default function EmailReaderHeader({ email, onReply, onForward }: EmailReaderHeaderProps) {
     const recipientList = email.recipients.map(r => r.name || r.email).join(', ')
 
     return (
@@ -26,11 +28,11 @@ export default function EmailReaderHeader({ email }: EmailReaderHeaderProps) {
                 </div>
             </div>
             <div className="reader-header__actions">
-                <button className="reader-header__action" title="Reply">
+                <button className="reader-header__action" title="Reply" onClick={onReply}>
                     <Reply size={15} />
                     <span>Reply</span>
                 </button>
-                <button className="reader-header__action" title="Forward">
+                <button className="reader-header__action" title="Forward" onClick={onForward}>
                     <Forward size={15} />
                     <span>Forward</span>
                 </button>

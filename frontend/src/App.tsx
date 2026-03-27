@@ -4,9 +4,10 @@ import './App.css'
 import Sidebar from './components/sidebar/Sidebar'
 import EmailList from './components/email-list/EmailList'
 import EmailReader from './components/email-reader/EmailReader'
+import EmailComposer from './components/email-composer/EmailComposer'
 import ContextMenu from './components/context-menu/ContextMenu'
 import SettingsModal from './components/settings/SettingsModal'
-import { Account, EmailDetail, EmailListItem, Folder, SyncStatus } from './types/mail'
+import { Account, ComposerConfig, EmailDetail, EmailListItem, Folder, SyncStatus } from './types/mail'
 import { ContextMenuContext, ContextMenuState, ContextMenuItem } from './context/ContextMenuContext'
 import { GetAccounts, UpdateAccount, DeleteAccount, GetFolders, GetEmails, GetEmailDetail, FetchEmailBody } from '../wailsjs/go/main/App'
 import { main as WailsModels } from '../wailsjs/go/models'
@@ -32,6 +33,7 @@ function App() {
 
     const [menuState, setMenuState] = useState<ContextMenuState | null>(null)
     const [settingsOpen, setSettingsOpen] = useState(false)
+    const [composerConfig, setComposerConfig] = useState<ComposerConfig | null>(null)
 
     // Load accounts from the backend on startup.
     useEffect(() => {
@@ -166,6 +168,33 @@ function App() {
         setSelectedEmailId(null)
     }
 
+    function buildQuote(email: EmailDetail): string {
+        const date = new Date(email.timestamp).toLocaleString()
+        return `<br><br><div style="border-left:2px solid #6b7bff;padding-left:12px;margin-top:8px;color:#8b8fa8"><div style="font-size:12px;margin-bottom:6px">On ${date}, ${email.sender.name} &lt;${email.sender.email}&gt; wrote:</div>${email.bodyHtml ?? ''}</div>`
+    }
+
+    function handleReply(email: EmailDetail) {
+        const subject = email.subject.startsWith('Re:') ? email.subject : `Re: ${email.subject}`
+        setComposerConfig({
+            mode: 'reply',
+            initialTo: email.sender.email,
+            initialSubject: subject,
+            initialBody: buildQuote(email),
+            initialAttachments: email.attachments ?? [],
+        })
+    }
+
+    function handleForward(email: EmailDetail) {
+        const subject = email.subject.startsWith('Fwd:') ? email.subject : `Fwd: ${email.subject}`
+        setComposerConfig({
+            mode: 'forward',
+            initialTo: '',
+            initialSubject: subject,
+            initialBody: buildQuote(email),
+            initialAttachments: email.attachments ?? [],
+        })
+    }
+
     // Called by the wizard after it has already persisted the account.
     function handleAddAccount(account: Account) {
         setAccounts(prev => [...prev, account])
@@ -228,6 +257,7 @@ function App() {
                             selectedFolderId={selectedFolderId}
                             onSelectFolder={handleSelectFolder}
                             onOpenSettings={() => setSettingsOpen(true)}
+                            onCompose={() => setComposerConfig({ mode: 'compose' })}
                             syncStatus={syncStatuses[activeAccount.id]}
                         />
                         <EmailList
@@ -236,7 +266,10 @@ function App() {
                             selectedEmailId={selectedEmailId}
                             onSelectEmail={setSelectedEmailId}
                         />
-                        <EmailReader email={selectedEmailDetail} loadingBody={loadingBody} />
+                        {composerConfig !== null
+                            ? <EmailComposer onClose={() => setComposerConfig(null)} account={activeAccount} config={composerConfig} />
+                            : <EmailReader email={selectedEmailDetail} loadingBody={loadingBody} onReply={handleReply} onForward={handleForward} />
+                        }
                     </>
                 ) : (
                     <div className="app-empty">

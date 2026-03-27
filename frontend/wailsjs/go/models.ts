@@ -263,6 +263,44 @@ export namespace main {
 	        this.isSystem = source["isSystem"];
 	    }
 	}
+	export class SendRequest {
+	    accountId: string;
+	    to: string[];
+	    subject: string;
+	    bodyHtml: string;
+	    attachments: Attachment[];
+	
+	    static createFrom(source: any = {}) {
+	        return new SendRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountId = source["accountId"];
+	        this.to = source["to"];
+	        this.subject = source["subject"];
+	        this.bodyHtml = source["bodyHtml"];
+	        this.attachments = this.convertValues(source["attachments"], Attachment);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	
 	export class UpdateAccountRequest {
 	    id: string;

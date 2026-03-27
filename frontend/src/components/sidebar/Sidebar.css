@@ -8,6 +8,33 @@
     height: 100%;
 }
 
+.sidebar__compose-wrap {
+    padding: var(--spacing-2) var(--spacing-2) 0;
+    flex-shrink: 0;
+}
+
+.sidebar__compose-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    width: 100%;
+    padding: 8px var(--spacing-3);
+    background-color: var(--color-accent);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--color-text-accent);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    font-weight: 600;
+    transition: background-color var(--transition-fast);
+}
+
+.sidebar__compose-btn:hover {
+    background-color: var(--color-accent-hover);
+}
+
 .sidebar__footer {
     padding: var(--spacing-2);
     border-top: 1px solid var(--color-border-subtle);

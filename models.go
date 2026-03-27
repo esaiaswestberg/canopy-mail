@@ -72,6 +72,15 @@ type AddAccountRequest struct {
 	SMTP        ServerConfig `json:"smtp"`
 }
 
+// SendRequest carries the data needed to send an outgoing email.
+type SendRequest struct {
+	AccountID   string       `json:"accountId"`
+	To          []string     `json:"to"`
+	Subject     string       `json:"subject"`
+	BodyHtml    string       `json:"bodyHtml"`
+	Attachments []Attachment `json:"attachments"`
+}
+
 // UpdateAccountRequest is sent when the user saves changes in the edit form.
 // Email and password are not part of the update flow.
 type UpdateAccountRequest struct {

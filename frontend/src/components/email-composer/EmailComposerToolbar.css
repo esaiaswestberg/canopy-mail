@@ -1,0 +1,34 @@
+.composer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-1) var(--spacing-3);
+    border-bottom: 1px solid var(--color-border-subtle);
+    flex-shrink: 0;
+}
+
+.composer-toolbar__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--color-text-muted);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.composer-toolbar__btn:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+.composer-toolbar__divider {
+    width: 1px;
+    height: 14px;
+    background-color: var(--color-border-subtle);
+    margin: 0 var(--spacing-1);
+    flex-shrink: 0;
+}

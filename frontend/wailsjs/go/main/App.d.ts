@@ -18,4 +18,6 @@ export function GetFolders(arg1:string):Promise<Array<main.Folder>>;
 
 export function SaveAttachment(arg1:string,arg2:string,arg3:Array<number>):Promise<void>;
 
+export function SendEmail(arg1:main.SendRequest):Promise<void>;
+
 export function UpdateAccount(arg1:main.UpdateAccountRequest):Promise<main.Account>;

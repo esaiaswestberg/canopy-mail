@@ -69,6 +69,16 @@ export interface EmailDetail extends EmailListItem {
     attachments?: Attachment[]
 }
 
+export type ComposerMode = 'compose' | 'reply' | 'forward'
+
+export interface ComposerConfig {
+    mode: ComposerMode
+    initialTo?: string
+    initialSubject?: string
+    initialBody?: string
+    initialAttachments?: Attachment[]
+}
+
 export interface SyncStatus {
     accountId: string
     status: 'syncing' | 'idle' | 'error'

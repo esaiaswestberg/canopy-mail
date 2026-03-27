@@ -34,6 +34,10 @@ export function SaveAttachment(arg1, arg2, arg3) {
   return window['go']['main']['App']['SaveAttachment'](arg1, arg2, arg3);
 }
 
+export function SendEmail(arg1) {
+  return window['go']['main']['App']['SendEmail'](arg1);
+}
+
 export function UpdateAccount(arg1) {
   return window['go']['main']['App']['UpdateAccount'](arg1);
 }

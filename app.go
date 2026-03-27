@@ -152,6 +152,22 @@ func (a *App) FetchEmailBody(accountID string, folder string, uid uint32) (*Emai
 	return detail, nil
 }
 
+// SendEmail composes and delivers an outgoing email via the account's SMTP server.
+func (a *App) SendEmail(req SendRequest) error {
+	if a.accounts == nil {
+		return fmt.Errorf("service not ready")
+	}
+	acc, err := a.accounts.getByID(req.AccountID)
+	if err != nil {
+		return fmt.Errorf("account not found: %w", err)
+	}
+	pwd, err := a.accounts.getPassword(req.AccountID)
+	if err != nil {
+		return fmt.Errorf("auth error: %w", err)
+	}
+	return sendEmail(acc.SMTP, acc.Email, pwd, req)
+}
+
 // SaveAttachment shows a native save dialog and writes the attachment data to the chosen path.
 func (a *App) SaveAttachment(name, contentType string, data []byte) error {
 	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
