@@ -9,7 +9,7 @@ session:
             - unalias cd
             - clear && claude
         - name: runner
-          command: clear && air
+          command: clear && wails dev
         - name: project
           command: clear && echo Welcome to Canopy Mail!
       layout:
