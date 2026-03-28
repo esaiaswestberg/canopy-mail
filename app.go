@@ -108,12 +108,30 @@ func (a *App) GetFolders(accountID string) ([]Folder, error) {
 	return a.cache.GetFolders(accountID)
 }
 
-// GetEmails fetches recent emails for a folder.
-func (a *App) GetEmails(accountID string, folder string) ([]EmailListItem, error) {
+// GetEmails fetches a page of emails for a folder.
+func (a *App) GetEmails(accountID string, folder string, page int, pageSize int) (*EmailPage, error) {
 	if a.cache == nil {
 		return nil, fmt.Errorf("service not ready")
 	}
-	return a.cache.GetEmails(accountID, folder)
+	if pageSize <= 0 {
+		pageSize = 50
+	}
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * pageSize
+	emails, total, err := a.cache.GetEmails(accountID, folder, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+	if emails == nil {
+		emails = []EmailListItem{}
+	}
+	return &EmailPage{
+		Emails:  emails,
+		Total:   total,
+		HasMore: offset+len(emails) < total,
+	}, nil
 }
 
 // GetEmailDetail fetches the full content of an email by UID from the local cache.

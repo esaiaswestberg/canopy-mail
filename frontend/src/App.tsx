@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import './App.css'
 import Sidebar from './components/sidebar/Sidebar'
@@ -7,7 +7,7 @@ import EmailReader from './components/email-reader/EmailReader'
 import EmailComposer from './components/email-composer/EmailComposer'
 import ContextMenu from './components/context-menu/ContextMenu'
 import SettingsModal from './components/settings/SettingsModal'
-import { Account, ComposerConfig, EmailDetail, EmailListItem, Folder, SyncStatus } from './types/mail'
+import { Account, ComposerConfig, EmailDetail, EmailListItem, EmailPage, Folder, SyncStatus } from './types/mail'
 import { ContextMenuContext, ContextMenuState, ContextMenuItem } from './context/ContextMenuContext'
 import { GetAccounts, UpdateAccount, DeleteAccount, GetFolders, GetEmails, GetEmailDetail, FetchEmailBody } from '../wailsjs/go/main/App'
 import { main as WailsModels } from '../wailsjs/go/models'
@@ -18,16 +18,19 @@ function App() {
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
     const [selectedFolderId, setSelectedFolderId] = useState('inbox')
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null)
-    
+
     const [folders, setFolders] = useState<Folder[]>([])
-    const [emails, setEmails] = useState<EmailListItem[]>([])
-    const emailsRef = useRef<EmailListItem[]>([])
+    const [emails, setEmails] = useState<(EmailListItem | null)[]>([])
+    const emailsRef = useRef<(EmailListItem | null)[]>([])
+    const fetchedPagesRef = useRef<Set<number>>(new Set())
     const [selectedEmailDetail, setSelectedEmailDetail] = useState<EmailDetail | null>(null)
 
     const [loadingFolders, setLoadingFolders] = useState(false)
     const [loadingEmails, setLoadingEmails] = useState(false)
     const [loadingDetail, setLoadingDetail] = useState(false)
     const [loadingBody, setLoadingBody] = useState(false)
+
+    const PAGE_SIZE = 50
 
     const [syncStatuses, setSyncStatuses] = useState<Record<string, SyncStatus>>({})
 
@@ -56,16 +59,19 @@ function App() {
 
         const onCacheUpdated = (data: { type: string, accountId: string, folderId?: string }) => {
             if (data.type === 'folders' && selectedAccountId === data.accountId) {
-                // Refresh folders
                 GetFolders(data.accountId).then(res => {
                     setFolders((res ?? []) as Folder[])
                 }).catch(console.error)
             } else if (data.type === 'emails' && selectedAccountId === data.accountId && selectedFolderId === data.folderId) {
-                // Refresh emails
-                GetEmails(data.accountId, data.folderId).then(res => {
-                    const list = (res ?? []) as EmailListItem[]
-                    emailsRef.current = list
-                    setEmails(list)
+                // New emails shift all indices — reinitialize the sparse array from page 1.
+                // Pages 2+ will be re-fetched on scroll.
+                GetEmails(data.accountId, data.folderId, 1, PAGE_SIZE).then(res => {
+                    const page = res as EmailPage
+                    const sparse = new Array<EmailListItem | null>(page.total).fill(null)
+                    page.emails.forEach((e, i) => { sparse[i] = e })
+                    emailsRef.current = sparse
+                    setEmails(sparse)
+                    fetchedPagesRef.current = new Set([1])
                 }).catch(console.error)
             }
         }
@@ -101,14 +107,20 @@ function App() {
 
     useEffect(() => {
         if (!activeAccount || !selectedFolderId) {
-            setEmails([])
+            setEmails([]); emailsRef.current = []
+            fetchedPagesRef.current = new Set()
             return
         }
         setLoadingEmails(true)
-        GetEmails(activeAccount.id, selectedFolderId).then(res => {
-            const list = (res ?? []) as EmailListItem[]
-            emailsRef.current = list
-            setEmails(list)
+        setEmails([]); emailsRef.current = []
+        fetchedPagesRef.current = new Set()
+        GetEmails(activeAccount.id, selectedFolderId, 1, PAGE_SIZE).then(res => {
+            const page = res as EmailPage
+            const sparse = new Array<EmailListItem | null>(page.total).fill(null)
+            page.emails.forEach((e, i) => { sparse[i] = e })
+            emailsRef.current = sparse
+            setEmails(sparse)
+            fetchedPagesRef.current = new Set([1])
         }).catch(console.error).finally(() => setLoadingEmails(false))
     }, [activeAccount?.id, selectedFolderId])
 
@@ -118,7 +130,7 @@ function App() {
             setLoadingBody(false)
             return
         }
-        const emailListItem = emailsRef.current.find(e => e.id === selectedEmailId)
+        const emailListItem = emailsRef.current.find(e => e?.id === selectedEmailId)
         if (!emailListItem) return
 
         const accountId = activeAccount.id
@@ -155,6 +167,32 @@ function App() {
 
         return () => { cancelled = true }
     }, [activeAccount?.id, selectedFolderId, selectedEmailId])
+
+    const loadMoreEmails = useCallback((startIndex: number, stopIndex: number) => {
+        if (!activeAccount || !selectedFolderId) return
+        const accountId = activeAccount.id
+        const folderId = selectedFolderId
+
+        const startPage = Math.floor(startIndex / PAGE_SIZE) + 1
+        const endPage = Math.floor(stopIndex / PAGE_SIZE) + 1
+
+        for (let p = startPage; p <= endPage; p++) {
+            if (fetchedPagesRef.current.has(p)) continue
+            fetchedPagesRef.current.add(p)
+            const offset = (p - 1) * PAGE_SIZE
+            GetEmails(accountId, folderId, p, PAGE_SIZE).then(res => {
+                const page = res as EmailPage
+                setEmails(prev => {
+                    const next = [...prev]
+                    page.emails.forEach((e, i) => { next[offset + i] = e })
+                    emailsRef.current = next
+                    return next
+                })
+            }).catch(() => {
+                fetchedPagesRef.current.delete(p)
+            })
+        }
+    }, [activeAccount?.id, selectedFolderId]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const activeFolder = folders.find(f => f.id === selectedFolderId) || { id: selectedFolderId, label: selectedFolderId, icon: 'inbox', isSystem: false }
 
@@ -266,6 +304,7 @@ function App() {
                             emails={emails}
                             selectedEmailId={selectedEmailId}
                             onSelectEmail={setSelectedEmailId}
+                            onLoadMore={loadMoreEmails}
                         />
                         {composerConfig !== null
                             ? <EmailComposer onClose={() => setComposerConfig(null)} account={activeAccount} config={composerConfig} />

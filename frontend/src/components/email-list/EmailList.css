@@ -19,3 +19,15 @@
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
 }
+
+.email-list__skeleton {
+    background: linear-gradient(90deg, var(--color-bg-list) 25%, var(--color-border-subtle) 50%, var(--color-bg-list) 75%);
+    background-size: 200% 100%;
+    animation: email-list-skeleton-shimmer 1.4s infinite;
+    border-bottom: 1px solid var(--color-border-subtle);
+}
+
+@keyframes email-list-skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}

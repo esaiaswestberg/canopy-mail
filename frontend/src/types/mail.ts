@@ -69,6 +69,12 @@ export interface EmailDetail extends EmailListItem {
     attachments?: Attachment[]
 }
 
+export interface EmailPage {
+    emails: EmailListItem[]
+    total: number
+    hasMore: boolean
+}
+
 export type ComposerMode = 'compose' | 'reply' | 'forward'
 
 export interface ComposerConfig {

@@ -8,16 +8,20 @@ import './EmailList.css'
 interface EmailListProps {
     folder: Folder
     folders: Folder[]
-    emails: EmailListItemType[]
+    emails: (EmailListItemType | null)[]
     selectedEmailId: string | null
     onSelectEmail: (id: string) => void
+    onLoadMore: (startIndex: number, stopIndex: number) => void
 }
 
 const ROW_HEIGHT = 80
 
-export default function EmailList({ folder, folders, emails, selectedEmailId, onSelectEmail }: EmailListProps) {
+export default function EmailList({ folder, folders, emails, selectedEmailId, onSelectEmail, onLoadMore }: EmailListProps) {
     function rowRenderer({ index, key, style }: ListRowProps) {
         const email = emails[index]
+        if (!email) {
+            return <div key={key} style={style} className="email-list__skeleton" />
+        }
         return (
             <div key={key} style={style}>
                 <EmailListItem
@@ -28,6 +32,10 @@ export default function EmailList({ folder, folders, emails, selectedEmailId, on
                 />
             </div>
         )
+    }
+
+    function handleRowsRendered({ startIndex, stopIndex }: { startIndex: number, stopIndex: number }) {
+        onLoadMore(startIndex, stopIndex)
     }
 
     return (
@@ -45,6 +53,7 @@ export default function EmailList({ folder, folders, emails, selectedEmailId, on
                                 rowCount={emails.length}
                                 rowHeight={ROW_HEIGHT}
                                 rowRenderer={rowRenderer}
+                                onRowsRendered={handleRowsRendered}
                                 overscanRowCount={5}
                             />
                         )}

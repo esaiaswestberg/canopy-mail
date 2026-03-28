@@ -137,16 +137,22 @@ func (s *cacheService) SaveEmails(accountID string, folderID string, emails []Em
 	return tx.Commit()
 }
 
-func (s *cacheService) GetEmails(accountID string, folderID string) ([]EmailListItem, error) {
+func (s *cacheService) GetEmails(accountID string, folderID string, limit int, offset int) ([]EmailListItem, int, error) {
+	total, err := s.GetEmailCount(accountID, folderID)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := s.db.Query(`
 		SELECT id, uid, sender_name, sender_email, subject, preview, timestamp,
 		       is_read, is_starred, has_attachment
 		FROM emails
 		WHERE account_id = ? AND folder_id = ?
 		ORDER BY uid DESC
-	`, accountID, folderID)
+		LIMIT ? OFFSET ?
+	`, accountID, folderID, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -159,11 +165,11 @@ func (s *cacheService) GetEmails(accountID string, folderID string) ([]EmailList
 			&e.ID, &e.UID, &e.Sender.Name, &e.Sender.Email, &e.Subject,
 			&e.Preview, &e.Timestamp, &e.IsRead, &e.IsStarred, &e.HasAttachment,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		emails = append(emails, e)
 	}
-	return emails, nil
+	return emails, total, nil
 }
 
 func (s *cacheService) GetEmailCount(accountID, folderID string) (int, error) {
