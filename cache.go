@@ -137,20 +137,32 @@ func (s *cacheService) SaveEmails(accountID string, folderID string, emails []Em
 	return tx.Commit()
 }
 
-func (s *cacheService) GetEmails(accountID string, folderID string, limit int, offset int) ([]EmailListItem, int, error) {
+func (s *cacheService) GetEmails(accountID string, folderID string, limit int, offset int, cursorUID uint32) ([]EmailListItem, int, error) {
 	total, err := s.GetEmailCount(accountID, folderID)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	rows, err := s.db.Query(`
-		SELECT id, uid, sender_name, sender_email, subject, preview, timestamp,
-		       is_read, is_starred, has_attachment
-		FROM emails
-		WHERE account_id = ? AND folder_id = ?
-		ORDER BY uid DESC
-		LIMIT ? OFFSET ?
-	`, accountID, folderID, limit, offset)
+	var rows *sql.Rows
+	if cursorUID > 0 {
+		rows, err = s.db.Query(`
+			SELECT id, uid, sender_name, sender_email, subject, preview, timestamp,
+			       is_read, is_starred, has_attachment
+			FROM emails
+			WHERE account_id = ? AND folder_id = ? AND uid < ?
+			ORDER BY uid DESC
+			LIMIT ?
+		`, accountID, folderID, cursorUID, limit)
+	} else {
+		rows, err = s.db.Query(`
+			SELECT id, uid, sender_name, sender_email, subject, preview, timestamp,
+			       is_read, is_starred, has_attachment
+			FROM emails
+			WHERE account_id = ? AND folder_id = ?
+			ORDER BY uid DESC
+			LIMIT ? OFFSET ?
+		`, accountID, folderID, limit, offset)
+	}
 	if err != nil {
 		return nil, 0, err
 	}

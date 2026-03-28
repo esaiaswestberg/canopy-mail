@@ -83,9 +83,10 @@ type SendRequest struct {
 
 // EmailPage is the paginated response for GetEmails.
 type EmailPage struct {
-	Emails  []EmailListItem `json:"emails"`
-	Total   int             `json:"total"`
-	HasMore bool            `json:"hasMore"`
+	Emails     []EmailListItem `json:"emails"`
+	Total      int             `json:"total"`
+	HasMore    bool            `json:"hasMore"`
+	NextCursor uint32          `json:"nextCursor"`
 }
 
 // UpdateAccountRequest is sent when the user saves changes in the edit form.

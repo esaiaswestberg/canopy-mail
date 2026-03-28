@@ -246,6 +246,7 @@ export namespace main {
 	    emails: EmailListItem[];
 	    total: number;
 	    hasMore: boolean;
+	    nextCursor: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new EmailPage(source);
@@ -256,6 +257,7 @@ export namespace main {
 	        this.emails = this.convertValues(source["emails"], EmailListItem);
 	        this.total = source["total"];
 	        this.hasMore = source["hasMore"];
+	        this.nextCursor = source["nextCursor"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

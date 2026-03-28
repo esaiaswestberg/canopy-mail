@@ -73,6 +73,7 @@ export interface EmailPage {
     emails: EmailListItem[]
     total: number
     hasMore: boolean
+    nextCursor: number
 }
 
 export type ComposerMode = 'compose' | 'reply' | 'forward'

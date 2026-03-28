@@ -109,7 +109,9 @@ func (a *App) GetFolders(accountID string) ([]Folder, error) {
 }
 
 // GetEmails fetches a page of emails for a folder.
-func (a *App) GetEmails(accountID string, folder string, page int, pageSize int) (*EmailPage, error) {
+// When cursorUID > 0 and page > 1, uses cursor-based pagination (O(1) for any depth).
+// Falls back to offset-based pagination when cursorUID == 0.
+func (a *App) GetEmails(accountID string, folder string, page int, pageSize int, cursorUID uint32) (*EmailPage, error) {
 	if a.cache == nil {
 		return nil, fmt.Errorf("service not ready")
 	}
@@ -120,17 +122,22 @@ func (a *App) GetEmails(accountID string, folder string, page int, pageSize int)
 		page = 1
 	}
 	offset := (page - 1) * pageSize
-	emails, total, err := a.cache.GetEmails(accountID, folder, pageSize, offset)
+	emails, total, err := a.cache.GetEmails(accountID, folder, pageSize, offset, cursorUID)
 	if err != nil {
 		return nil, err
 	}
 	if emails == nil {
 		emails = []EmailListItem{}
 	}
+	var nextCursor uint32
+	if len(emails) > 0 {
+		nextCursor = emails[len(emails)-1].UID
+	}
 	return &EmailPage{
-		Emails:  emails,
-		Total:   total,
-		HasMore: offset+len(emails) < total,
+		Emails:     emails,
+		Total:      total,
+		HasMore:    offset+len(emails) < total,
+		NextCursor: nextCursor,
 	}, nil
 }
 

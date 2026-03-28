@@ -12,7 +12,7 @@ export function GetAccounts():Promise<Array<main.Account>>;
 
 export function GetEmailDetail(arg1:string,arg2:string,arg3:number):Promise<main.EmailDetail>;
 
-export function GetEmails(arg1:string,arg2:string,arg3:number,arg4:number):Promise<main.EmailPage>;
+export function GetEmails(arg1:string,arg2:string,arg3:number,arg4:number,arg5:number):Promise<main.EmailPage>;
 
 export function GetFolders(arg1:string):Promise<Array<main.Folder>>;
 

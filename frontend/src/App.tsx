@@ -23,6 +23,7 @@ function App() {
     const [emails, setEmails] = useState<(EmailListItem | null)[]>([])
     const emailsRef = useRef<(EmailListItem | null)[]>([])
     const fetchedPagesRef = useRef<Set<number>>(new Set())
+    const pageCursorsRef = useRef<Map<number, number>>(new Map())
     const [selectedEmailDetail, setSelectedEmailDetail] = useState<EmailDetail | null>(null)
 
     const [loadingFolders, setLoadingFolders] = useState(false)
@@ -65,13 +66,14 @@ function App() {
             } else if (data.type === 'emails' && selectedAccountId === data.accountId && selectedFolderId === data.folderId) {
                 // New emails shift all indices — reinitialize the sparse array from page 1.
                 // Pages 2+ will be re-fetched on scroll.
-                GetEmails(data.accountId, data.folderId, 1, PAGE_SIZE).then(res => {
+                GetEmails(data.accountId, data.folderId, 1, PAGE_SIZE, 0).then(res => {
                     const page = res as EmailPage
                     const sparse = new Array<EmailListItem | null>(page.total).fill(null)
                     page.emails.forEach((e, i) => { sparse[i] = e })
                     emailsRef.current = sparse
                     setEmails(sparse)
                     fetchedPagesRef.current = new Set([1])
+                    pageCursorsRef.current = new Map([[1, page.nextCursor]])
                 }).catch(console.error)
             }
         }
@@ -109,18 +111,21 @@ function App() {
         if (!activeAccount || !selectedFolderId) {
             setEmails([]); emailsRef.current = []
             fetchedPagesRef.current = new Set()
+            pageCursorsRef.current = new Map()
             return
         }
         setLoadingEmails(true)
         setEmails([]); emailsRef.current = []
         fetchedPagesRef.current = new Set()
-        GetEmails(activeAccount.id, selectedFolderId, 1, PAGE_SIZE).then(res => {
+        pageCursorsRef.current = new Map()
+        GetEmails(activeAccount.id, selectedFolderId, 1, PAGE_SIZE, 0).then(res => {
             const page = res as EmailPage
             const sparse = new Array<EmailListItem | null>(page.total).fill(null)
             page.emails.forEach((e, i) => { sparse[i] = e })
             emailsRef.current = sparse
             setEmails(sparse)
             fetchedPagesRef.current = new Set([1])
+            pageCursorsRef.current = new Map([[1, page.nextCursor]])
         }).catch(console.error).finally(() => setLoadingEmails(false))
     }, [activeAccount?.id, selectedFolderId])
 
@@ -180,8 +185,12 @@ function App() {
             if (fetchedPagesRef.current.has(p)) continue
             fetchedPagesRef.current.add(p)
             const offset = (p - 1) * PAGE_SIZE
-            GetEmails(accountId, folderId, p, PAGE_SIZE).then(res => {
+            // Use cursor from the previous page when available (O(1) for any depth).
+            // Fall back to offset when scrolling to a page whose predecessor isn't loaded yet.
+            const cursor = pageCursorsRef.current.get(p - 1) ?? 0
+            GetEmails(accountId, folderId, p, PAGE_SIZE, cursor).then(res => {
                 const page = res as EmailPage
+                pageCursorsRef.current.set(p, page.nextCursor)
                 setEmails(prev => {
                     const next = [...prev]
                     page.emails.forEach((e, i) => { next[offset + i] = e })
