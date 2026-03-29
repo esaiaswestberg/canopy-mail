@@ -1,6 +1,7 @@
 .email-list-item {
+    height: 100%;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--spacing-2);
     width: 100%;
     padding: var(--spacing-3) var(--spacing-4);
@@ -30,7 +31,6 @@
     align-items: center;
     gap: var(--spacing-1);
     flex-shrink: 0;
-    padding-top: 2px;
 }
 
 .email-list-item__dot {

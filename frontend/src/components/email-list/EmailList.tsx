@@ -20,7 +20,7 @@ interface EmailListProps {
     onForward: (email: EmailListItemType) => void
 }
 
-const ROW_HEIGHT = 80
+const ROW_HEIGHT = 70
 
 export default function EmailList({ folder, folders, emails, selectedEmailIds, onSelectionChange, onLoadMore, onMarkEmailRead, onMultiMarkEmailRead, onReply, onForward }: EmailListProps) {
     const lastClickedIndexRef = useRef<number | null>(null)
