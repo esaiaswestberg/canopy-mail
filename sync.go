@@ -196,8 +196,22 @@ func (s *syncManager) SyncAccount(accountID string) {
 
 		missing := int(imapTotal) - cachedCount
 		if missing <= 0 {
-			fmt.Printf("[sync] folder %q: nothing to fetch (possible deletions)\n", f.ID)
+			fmt.Printf("[sync] folder %q: server has fewer messages (%d) than cache (%d) — reconciling\n", f.ID, imapTotal, cachedCount)
+			validUIDs, err := getIMAPUIDs(c)
 			c.Logout() //nolint:errcheck
+			if err != nil {
+				fmt.Printf("[sync] folder %q: UID fetch failed: %v\n", f.ID, err)
+				continue
+			}
+			deleted, err := s.cache.DeleteStaleEmails(accountID, f.ID, validUIDs)
+			if err != nil {
+				fmt.Printf("[sync] folder %q: stale delete failed: %v\n", f.ID, err)
+				continue
+			}
+			if deleted > 0 {
+				fmt.Printf("[sync] folder %q: removed %d stale emails\n", f.ID, deleted)
+				runtime.EventsEmit(s.ctx, "cache:updated", map[string]string{"type": "emails", "accountId": accountID, "folderId": f.ID})
+			}
 			continue
 		}
 

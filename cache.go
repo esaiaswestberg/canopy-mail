@@ -194,6 +194,60 @@ func (s *cacheService) GetEmailCount(accountID, folderID string) (int, error) {
 }
 
 
+func (s *cacheService) GetEmailUIDs(accountID, folderID string) ([]uint32, error) {
+	rows, err := s.db.Query(
+		`SELECT uid FROM emails WHERE account_id = ? AND folder_id = ?`,
+		accountID, folderID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var uids []uint32
+	for rows.Next() {
+		var uid uint32
+		if err := rows.Scan(&uid); err != nil {
+			return nil, err
+		}
+		uids = append(uids, uid)
+	}
+	return uids, rows.Err()
+}
+
+func (s *cacheService) DeleteStaleEmails(accountID, folderID string, validUIDs map[uint32]bool) (int, error) {
+	cached, err := s.GetEmailUIDs(accountID, folderID)
+	if err != nil {
+		return 0, err
+	}
+	var stale []uint32
+	for _, uid := range cached {
+		if !validUIDs[uid] {
+			stale = append(stale, uid)
+		}
+	}
+	if len(stale) == 0 {
+		return 0, nil
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback() //nolint:errcheck
+	var deleted int
+	for _, uid := range stale {
+		res, err := tx.Exec(
+			`DELETE FROM emails WHERE account_id = ? AND folder_id = ? AND uid = ?`,
+			accountID, folderID, uid,
+		)
+		if err != nil {
+			return 0, err
+		}
+		n, _ := res.RowsAffected()
+		deleted += int(n)
+	}
+	return deleted, tx.Commit()
+}
+
 func (s *cacheService) UpdateEmailDetail(accountID, folderID string, uid uint32, bodyHtml string, hasAttachment bool, attachments []Attachment) error {
 	type attachmentMeta struct {
 		Name        string `json:"name"`
@@ -242,6 +296,14 @@ func (s *cacheService) UpdateEmailDetail(accountID, folderID string, uid uint32,
 	}
 
 	return tx.Commit()
+}
+
+func (s *cacheService) UpdateEmailReadStatus(accountID, folderID string, uid uint32, isRead bool) error {
+	_, err := s.db.Exec(
+		`UPDATE emails SET is_read = ? WHERE account_id = ? AND folder_id = ? AND uid = ?`,
+		isRead, accountID, folderID, uid,
+	)
+	return err
 }
 
 func (s *cacheService) GetEmailDetail(accountID string, folderID string, uid uint32) (*EmailDetail, error) {

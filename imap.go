@@ -263,6 +263,18 @@ func getIMAPTotal(c *client.Client, folder string) (uint32, error) {
 }
 
 
+func getIMAPUIDs(c *client.Client) (map[uint32]bool, error) {
+	uids, err := c.UidSearch(&imap.SearchCriteria{})
+	if err != nil {
+		return nil, err
+	}
+	set := make(map[uint32]bool, len(uids))
+	for _, uid := range uids {
+		set[uid] = true
+	}
+	return set, nil
+}
+
 func fetchEnvelopesForRange(c *client.Client, folder string, from uint32, to uint32, accountID string) ([]EmailDetail, error) {
 	startTime := time.Now()
 	fmt.Printf("imap: fetching envelopes %s range %d-%d\n", folder, from, to)
@@ -685,4 +697,38 @@ func getEmailDetail(cfg ServerConfig, password string, folder string, uid uint32
 	}
 
 	return detail, nil
+}
+
+func setEmailReadFlag(cfg ServerConfig, password string, folder string, uid uint32, isRead bool) error {
+	c, err := dialIMAP(cfg)
+	if err != nil {
+		return err
+	}
+	defer c.Logout() //nolint:errcheck
+
+	if err := c.Login(cfg.Username, password); err != nil {
+		return err
+	}
+
+	_, err = c.Select(folder, false)
+	if err != nil {
+		return err
+	}
+
+	seqset := new(imap.SeqSet)
+	seqset.AddNum(uid)
+
+	var operation imap.StoreItem
+	if isRead {
+		operation = imap.AddFlags
+	} else {
+		operation = imap.RemoveFlags
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		done <- c.UidStore(seqset, operation, []interface{}{imap.SeenFlag}, nil)
+	}()
+
+	return <-done
 }
