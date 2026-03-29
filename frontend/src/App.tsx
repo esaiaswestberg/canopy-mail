@@ -9,7 +9,7 @@ import ContextMenu from './components/context-menu/ContextMenu'
 import SettingsModal from './components/settings/SettingsModal'
 import { Account, ComposerConfig, EmailDetail, EmailListItem, EmailPage, Folder, SyncStatus } from './types/mail'
 import { ContextMenuContext, ContextMenuState, ContextMenuItem } from './context/ContextMenuContext'
-import { GetAccounts, UpdateAccount, DeleteAccount, GetFolders, GetEmails, GetEmailDetail, FetchEmailBody } from '../wailsjs/go/main/App'
+import { GetAccounts, UpdateAccount, DeleteAccount, GetFolders, GetEmails, GetEmailDetail, FetchEmailBody, MarkEmailRead } from '../wailsjs/go/main/App'
 import { main as WailsModels } from '../wailsjs/go/models'
 import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime'
 
@@ -129,6 +129,27 @@ function App() {
         }).catch(console.error).finally(() => setLoadingEmails(false))
     }, [activeAccount?.id, selectedFolderId])
 
+    function handleMarkEmailRead(email: EmailListItem, isRead: boolean) {
+        // Optimistic update
+        setEmails(prev => {
+            const next = prev.map(e => e?.id === email.id ? { ...e, isRead } : e)
+            emailsRef.current = next
+            return next
+        })
+        setSelectedEmailDetail(prev => prev?.id === email.id ? { ...prev, isRead } : prev)
+
+        MarkEmailRead(email.accountId, email.folderId, email.uid, isRead).catch(err => {
+            console.error('MarkEmailRead failed:', err)
+            // Revert optimistic update on failure
+            setEmails(prev => {
+                const next = prev.map(e => e?.id === email.id ? { ...e, isRead: !isRead } : e)
+                emailsRef.current = next
+                return next
+            })
+            setSelectedEmailDetail(prev => prev?.id === email.id ? { ...prev, isRead: !isRead } : prev)
+        })
+    }
+
     useEffect(() => {
         if (!activeAccount || !selectedFolderId || !selectedEmailId) {
             setSelectedEmailDetail(null)
@@ -141,6 +162,10 @@ function App() {
         const accountId = activeAccount.id
         const folderId = selectedFolderId
         const uid = emailListItem.uid || parseInt(emailListItem.id)
+
+        if (!emailListItem.isRead) {
+            handleMarkEmailRead(emailListItem, true)
+        }
 
         let cancelled = false
 
@@ -323,6 +348,7 @@ function App() {
                             selectedEmailId={selectedEmailId}
                             onSelectEmail={setSelectedEmailId}
                             onLoadMore={loadMoreEmails}
+                            onMarkEmailRead={handleMarkEmailRead}
                         />
                         {composerConfig !== null
                             ? <EmailComposer onClose={() => setComposerConfig(null)} account={activeAccount} config={composerConfig} />

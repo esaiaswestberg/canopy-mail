@@ -32,20 +32,20 @@ function icon(component: React.ElementType) {
     return createElement(component, { size: 13 })
 }
 
-export function useEmailContextMenuItems(email: EmailListItem, folders: Folder[]): ContextMenuItem[] {
+export function useEmailContextMenuItems(email: EmailListItem, folders: Folder[], onMarkEmailRead: (email: EmailListItem, isRead: boolean) => void): ContextMenuItem[] {
     return [
         email.isRead
             ? {
                   type: 'action',
                   label: 'Mark as Unread',
                   icon: icon(MailOpen),
-                  onClick: () => console.log('mark unread', email.id),
+                  onClick: () => onMarkEmailRead(email, false),
               }
             : {
                   type: 'action',
                   label: 'Mark as Read',
                   icon: icon(BookOpen),
-                  onClick: () => console.log('mark read', email.id),
+                  onClick: () => onMarkEmailRead(email, true),
               },
         email.isStarred
             ? {

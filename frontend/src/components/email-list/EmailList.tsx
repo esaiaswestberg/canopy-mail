@@ -12,11 +12,12 @@ interface EmailListProps {
     selectedEmailId: string | null
     onSelectEmail: (id: string) => void
     onLoadMore: (startIndex: number, stopIndex: number) => void
+    onMarkEmailRead: (email: EmailListItemType, isRead: boolean) => void
 }
 
 const ROW_HEIGHT = 80
 
-export default function EmailList({ folder, folders, emails, selectedEmailId, onSelectEmail, onLoadMore }: EmailListProps) {
+export default function EmailList({ folder, folders, emails, selectedEmailId, onSelectEmail, onLoadMore, onMarkEmailRead }: EmailListProps) {
     function rowRenderer({ index, key, style }: ListRowProps) {
         const email = emails[index]
         if (!email) {
@@ -29,6 +30,7 @@ export default function EmailList({ folder, folders, emails, selectedEmailId, on
                     folders={folders}
                     isSelected={email.id === selectedEmailId}
                     onClick={() => onSelectEmail(email.id)}
+                    onMarkEmailRead={onMarkEmailRead}
                 />
             </div>
         )

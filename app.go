@@ -180,6 +180,29 @@ func (a *App) FetchEmailBody(accountID string, folder string, uid uint32) (*Emai
 	return detail, nil
 }
 
+// MarkEmailRead sets or clears the \Seen flag on the IMAP server and updates the local cache.
+func (a *App) MarkEmailRead(accountID, folderID string, uid uint32, isRead bool) error {
+	if a.cache == nil || a.accounts == nil {
+		return fmt.Errorf("service not ready")
+	}
+
+	acc, err := a.accounts.getByID(accountID)
+	if err != nil {
+		return fmt.Errorf("account not found: %w", err)
+	}
+
+	pwd, err := a.accounts.getPassword(accountID)
+	if err != nil {
+		return fmt.Errorf("auth error: %w", err)
+	}
+
+	if err := setEmailReadFlag(acc.IMAP, pwd, folderID, uid, isRead); err != nil {
+		return fmt.Errorf("imap store failed: %w", err)
+	}
+
+	return a.cache.UpdateEmailReadStatus(accountID, folderID, uid, isRead)
+}
+
 // SendEmail composes and delivers an outgoing email via the account's SMTP server.
 func (a *App) SendEmail(req SendRequest) error {
 	if a.accounts == nil {

@@ -30,6 +30,10 @@ export function GetFolders(arg1) {
   return window['go']['main']['App']['GetFolders'](arg1);
 }
 
+export function MarkEmailRead(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['MarkEmailRead'](arg1, arg2, arg3, arg4);
+}
+
 export function OpenURL(arg1) {
   return window['go']['main']['App']['OpenURL'](arg1);
 }

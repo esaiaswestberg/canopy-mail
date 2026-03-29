@@ -16,6 +16,8 @@ export function GetEmails(arg1:string,arg2:string,arg3:number,arg4:number,arg5:n
 
 export function GetFolders(arg1:string):Promise<Array<main.Folder>>;
 
+export function MarkEmailRead(arg1:string,arg2:string,arg3:number,arg4:boolean):Promise<void>;
+
 export function OpenURL(arg1:string):Promise<void>;
 
 export function SaveAttachment(arg1:string,arg2:string,arg3:Array<number>):Promise<void>;
