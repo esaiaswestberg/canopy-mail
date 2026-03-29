@@ -267,6 +267,18 @@ function App() {
         })
     }
 
+    async function handleContextMenuReply(emailItem: EmailListItem) {
+        const uid = emailItem.uid || parseInt(emailItem.id)
+        const detail = await GetEmailDetail(emailItem.accountId, emailItem.folderId, uid) as EmailDetail
+        handleReply(detail)
+    }
+
+    async function handleContextMenuForward(emailItem: EmailListItem) {
+        const uid = emailItem.uid || parseInt(emailItem.id)
+        const detail = await GetEmailDetail(emailItem.accountId, emailItem.folderId, uid) as EmailDetail
+        handleForward(detail)
+    }
+
     function handleMailto(to: string, subject?: string, body?: string) {
         setComposerConfig({
             mode: 'compose',
@@ -349,6 +361,8 @@ function App() {
                             onSelectEmail={setSelectedEmailId}
                             onLoadMore={loadMoreEmails}
                             onMarkEmailRead={handleMarkEmailRead}
+                            onReply={handleContextMenuReply}
+                            onForward={handleContextMenuForward}
                         />
                         {composerConfig !== null
                             ? <EmailComposer onClose={() => setComposerConfig(null)} account={activeAccount} config={composerConfig} />

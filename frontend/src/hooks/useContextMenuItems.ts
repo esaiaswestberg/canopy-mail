@@ -32,7 +32,7 @@ function icon(component: React.ElementType) {
     return createElement(component, { size: 13 })
 }
 
-export function useEmailContextMenuItems(email: EmailListItem, folders: Folder[], onMarkEmailRead: (email: EmailListItem, isRead: boolean) => void): ContextMenuItem[] {
+export function useEmailContextMenuItems(email: EmailListItem, folders: Folder[], onMarkEmailRead: (email: EmailListItem, isRead: boolean) => void, onReply: (email: EmailListItem) => void, onForward: (email: EmailListItem) => void): ContextMenuItem[] {
     return [
         email.isRead
             ? {
@@ -65,13 +65,13 @@ export function useEmailContextMenuItems(email: EmailListItem, folders: Folder[]
             type: 'action',
             label: 'Reply',
             icon: icon(Reply),
-            onClick: () => console.log('reply', email.id),
+            onClick: () => onReply(email),
         },
         {
             type: 'action',
             label: 'Forward',
             icon: icon(Forward),
-            onClick: () => console.log('forward', email.id),
+            onClick: () => onForward(email),
         },
         { type: 'divider' },
         {

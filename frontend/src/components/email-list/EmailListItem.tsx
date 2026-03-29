@@ -11,6 +11,8 @@ interface EmailListItemProps {
     isSelected: boolean
     onClick: () => void
     onMarkEmailRead: (email: EmailListItemType, isRead: boolean) => void
+    onReply: (email: EmailListItemType) => void
+    onForward: (email: EmailListItemType) => void
 }
 
 function getInitial(name: string): string {
@@ -25,9 +27,9 @@ function avatarColor(name: string): string {
     return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export default function EmailListItem({ email, folders, isSelected, onClick, onMarkEmailRead }: EmailListItemProps) {
+export default function EmailListItem({ email, folders, isSelected, onClick, onMarkEmailRead, onReply, onForward }: EmailListItemProps) {
     const { openMenu } = useContextMenu()
-    const menuItems = useEmailContextMenuItems(email, folders, onMarkEmailRead)
+    const menuItems = useEmailContextMenuItems(email, folders, onMarkEmailRead, onReply, onForward)
 
     function handleContextMenu(e: React.MouseEvent) {
         e.preventDefault()
