@@ -242,6 +242,15 @@ function App() {
         })
     }
 
+    function handleMailto(to: string, subject?: string, body?: string) {
+        setComposerConfig({
+            mode: 'compose',
+            initialTo: to,
+            initialSubject: subject,
+            initialBody: body,
+        })
+    }
+
     // Called by the wizard after it has already persisted the account.
     function handleAddAccount(account: Account) {
         setAccounts(prev => [...prev, account])
@@ -317,7 +326,7 @@ function App() {
                         />
                         {composerConfig !== null
                             ? <EmailComposer onClose={() => setComposerConfig(null)} account={activeAccount} config={composerConfig} />
-                            : <EmailReader email={selectedEmailDetail} loadingBody={loadingBody} onReply={handleReply} onForward={handleForward} />
+                            : <EmailReader email={selectedEmailDetail} loadingBody={loadingBody} onReply={handleReply} onForward={handleForward} onMailto={handleMailto} />
                         }
                     </>
                 ) : (

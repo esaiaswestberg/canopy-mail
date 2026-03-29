@@ -1,9 +1,11 @@
-import { useRef, useCallback } from 'react'
+import { useEffect, useMemo } from 'react'
+import { OpenURL } from '../../../wailsjs/go/main/App'
 import './EmailReaderBody.css'
 
 interface EmailReaderBodyProps {
     bodyHtml: string
     loading: boolean
+    onMailto: (to: string, subject?: string, body?: string) => void
 }
 
 const DEFAULT_STYLES = `
@@ -94,17 +96,57 @@ const DEFAULT_STYLES = `
     }
 `
 
-export default function EmailReaderBody({ bodyHtml, loading }: EmailReaderBodyProps) {
-    const iframeRef = useRef<HTMLIFrameElement>(null)
+const CLICK_HANDLER_SCRIPT = `
+    document.addEventListener('click', function(e) {
+        var a = e.target.closest('a');
+        if (!a) return;
+        e.preventDefault();
+        window.parent.postMessage({ type: 'canopy-link', href: a.getAttribute('href') || '' }, '*');
+    });
+`
 
-    const handleLoad = useCallback(() => {
-        const iframe = iframeRef.current
-        if (!iframe?.contentDocument) return
+function buildSrcDoc(bodyHtml: string): string {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(bodyHtml, 'text/html')
 
-        const style = iframe.contentDocument.createElement('style')
-        style.textContent = DEFAULT_STYLES
-        iframe.contentDocument.head.insertBefore(style, iframe.contentDocument.head.firstChild)
-    }, [])
+    // Strip scripts and unsafe event handlers from email HTML
+    doc.querySelectorAll('script, noscript').forEach(el => el.remove())
+    doc.querySelectorAll('*').forEach(el => {
+        Array.from(el.attributes).forEach(attr => {
+            if (attr.name.startsWith('on')) el.removeAttribute(attr.name)
+        })
+        const href = el.getAttribute('href')
+        if (href?.toLowerCase().startsWith('javascript:')) el.removeAttribute('href')
+    })
+
+    const style = doc.createElement('style')
+    style.textContent = DEFAULT_STYLES
+    doc.head.insertBefore(style, doc.head.firstChild)
+
+    const script = doc.createElement('script')
+    script.textContent = CLICK_HANDLER_SCRIPT
+    doc.body.appendChild(script)
+
+    return doc.documentElement.outerHTML
+}
+
+export default function EmailReaderBody({ bodyHtml, loading, onMailto }: EmailReaderBodyProps) {
+    const srcDoc = useMemo(() => buildSrcDoc(bodyHtml), [bodyHtml])
+
+    useEffect(() => {
+        function handleMessage(e: MessageEvent) {
+            if (!e.data || e.data.type !== 'canopy-link') return
+            const href: string = e.data.href
+            if (href.startsWith('http://') || href.startsWith('https://')) {
+                OpenURL(href)
+            } else if (href.startsWith('mailto:')) {
+                const url = new URL(href)
+                onMailto(url.pathname, url.searchParams.get('subject') ?? undefined, url.searchParams.get('body') ?? undefined)
+            }
+        }
+        window.addEventListener('message', handleMessage)
+        return () => window.removeEventListener('message', handleMessage)
+    }, [onMailto])
 
     if (loading) {
         return (
@@ -117,11 +159,9 @@ export default function EmailReaderBody({ bodyHtml, loading }: EmailReaderBodyPr
     return (
         <div className="reader-body-wrapper">
             <iframe
-                ref={iframeRef}
                 className="reader-body"
-                srcDoc={bodyHtml}
-                sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-                onLoad={handleLoad}
+                srcDoc={srcDoc}
+                sandbox="allow-scripts allow-same-origin"
             />
         </div>
     )

@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	goruntime "runtime"
+	"strings"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -203,6 +206,24 @@ func (a *App) SaveAttachment(name, contentType string, data []byte) error {
 		return err
 	}
 	return os.WriteFile(savePath, data, 0644)
+}
+
+// OpenURL opens a URL in the system's default browser.
+// Only http and https URLs are accepted.
+func (a *App) OpenURL(url string) error {
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		return fmt.Errorf("unsupported URL scheme")
+	}
+	var cmd *exec.Cmd
+	switch goruntime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		cmd = exec.Command("xdg-open", url)
+	}
+	return cmd.Start()
 }
 
 // appDataDir returns the platform-appropriate directory for storing app data.

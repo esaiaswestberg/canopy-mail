@@ -10,9 +10,10 @@ interface EmailReaderProps {
     loadingBody: boolean
     onReply: (email: EmailDetail) => void
     onForward: (email: EmailDetail) => void
+    onMailto: (to: string, subject?: string, body?: string) => void
 }
 
-export default function EmailReader({ email, loadingBody, onReply, onForward }: EmailReaderProps) {
+export default function EmailReader({ email, loadingBody, onReply, onForward, onMailto }: EmailReaderProps) {
     if (!email) {
         return (
             <div className="email-reader email-reader--empty">
@@ -25,7 +26,7 @@ export default function EmailReader({ email, loadingBody, onReply, onForward }: 
     return (
         <div className="email-reader">
             <EmailReaderHeader email={email} onReply={() => onReply(email)} onForward={() => onForward(email)} />
-            <EmailReaderBody bodyHtml={email.bodyHtml} loading={loadingBody} />
+            <EmailReaderBody bodyHtml={email.bodyHtml} loading={loadingBody} onMailto={onMailto} />
             {email.attachments && email.attachments.length > 0 && (
                 <EmailReaderAttachments attachments={email.attachments} />
             )}
