@@ -3,16 +3,19 @@ import { EmailListItem as EmailListItemType, Folder } from '../../types/mail'
 import { formatTimestamp } from '../../utils/time'
 import { useContextMenu } from '../../context/ContextMenuContext'
 import { useEmailContextMenuItems } from '../../hooks/useContextMenuItems'
+import { ContextMenuItem } from '../../context/ContextMenuContext'
 import './EmailListItem.css'
 
 interface EmailListItemProps {
     email: EmailListItemType
     folders: Folder[]
     isSelected: boolean
-    onClick: () => void
+    onClick: (e: React.MouseEvent) => void
+    onSingleSelect: () => void
     onMarkEmailRead: (email: EmailListItemType, isRead: boolean) => void
     onReply: (email: EmailListItemType) => void
     onForward: (email: EmailListItemType) => void
+    multiSelectMenuItems?: ContextMenuItem[]
 }
 
 function getInitial(name: string): string {
@@ -27,13 +30,18 @@ function avatarColor(name: string): string {
     return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export default function EmailListItem({ email, folders, isSelected, onClick, onMarkEmailRead, onReply, onForward }: EmailListItemProps) {
+export default function EmailListItem({ email, folders, isSelected, onClick, onSingleSelect, onMarkEmailRead, onReply, onForward, multiSelectMenuItems }: EmailListItemProps) {
     const { openMenu } = useContextMenu()
-    const menuItems = useEmailContextMenuItems(email, folders, onMarkEmailRead, onReply, onForward)
+    const singleMenuItems = useEmailContextMenuItems(email, folders, onMarkEmailRead, onReply, onForward)
 
     function handleContextMenu(e: React.MouseEvent) {
         e.preventDefault()
-        openMenu(e.clientX, e.clientY, menuItems)
+        if (isSelected && multiSelectMenuItems) {
+            openMenu(e.clientX, e.clientY, multiSelectMenuItems)
+        } else {
+            onSingleSelect()
+            openMenu(e.clientX, e.clientY, singleMenuItems)
+        }
     }
 
     return (

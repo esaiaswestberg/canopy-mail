@@ -17,7 +17,7 @@ function App() {
     const [accounts, setAccounts] = useState<Account[]>([])
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
     const [selectedFolderId, setSelectedFolderId] = useState('inbox')
-    const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null)
+    const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(new Set())
 
     const [folders, setFolders] = useState<Folder[]>([])
     const [emails, setEmails] = useState<(EmailListItem | null)[]>([])
@@ -86,6 +86,8 @@ function App() {
         }
     }, [selectedAccountId, selectedFolderId])
 
+    const activeEmailId = selectedEmailIds.size === 1 ? [...selectedEmailIds][0] : null
+
     const activeAccount = accounts.find(a => a.id === selectedAccountId) ?? accounts[0] ?? null
 
     useEffect(() => {
@@ -151,12 +153,12 @@ function App() {
     }
 
     useEffect(() => {
-        if (!activeAccount || !selectedFolderId || !selectedEmailId) {
+        if (!activeAccount || !selectedFolderId || !activeEmailId) {
             setSelectedEmailDetail(null)
             setLoadingBody(false)
             return
         }
-        const emailListItem = emailsRef.current.find(e => e?.id === selectedEmailId)
+        const emailListItem = emailsRef.current.find(e => e?.id === activeEmailId)
         if (!emailListItem) return
 
         const accountId = activeAccount.id
@@ -196,7 +198,7 @@ function App() {
         })
 
         return () => { cancelled = true }
-    }, [activeAccount?.id, selectedFolderId, selectedEmailId])
+    }, [activeAccount?.id, selectedFolderId, activeEmailId])
 
     const loadMoreEmails = useCallback((startIndex: number, stopIndex: number) => {
         if (!activeAccount || !selectedFolderId) return
@@ -232,12 +234,12 @@ function App() {
 
     function handleSelectFolder(id: string) {
         setSelectedFolderId(id)
-        setSelectedEmailId(null)
+        setSelectedEmailIds(new Set())
     }
 
     function handleSelectAccount(id: string) {
         setSelectedAccountId(id)
-        setSelectedEmailId(null)
+        setSelectedEmailIds(new Set())
     }
 
     function buildQuote(email: EmailDetail): string {
@@ -265,6 +267,10 @@ function App() {
             initialBody: buildQuote(email),
             initialAttachments: email.attachments ?? [],
         })
+    }
+
+    function handleMultiMarkEmailRead(emailItems: EmailListItem[], isRead: boolean) {
+        emailItems.forEach(item => handleMarkEmailRead(item, isRead))
     }
 
     async function handleContextMenuReply(emailItem: EmailListItem) {
@@ -357,10 +363,11 @@ function App() {
                             folder={activeFolder}
                             folders={folders}
                             emails={emails}
-                            selectedEmailId={selectedEmailId}
-                            onSelectEmail={setSelectedEmailId}
+                            selectedEmailIds={selectedEmailIds}
+                            onSelectionChange={setSelectedEmailIds}
                             onLoadMore={loadMoreEmails}
                             onMarkEmailRead={handleMarkEmailRead}
+                            onMultiMarkEmailRead={handleMultiMarkEmailRead}
                             onReply={handleContextMenuReply}
                             onForward={handleContextMenuForward}
                         />

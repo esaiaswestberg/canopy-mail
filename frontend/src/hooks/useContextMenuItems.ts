@@ -32,6 +32,50 @@ function icon(component: React.ElementType) {
     return createElement(component, { size: 13 })
 }
 
+export function useMultiEmailContextMenuItems(emails: EmailListItem[], folders: Folder[], onMultiMarkEmailRead: (emails: EmailListItem[], isRead: boolean) => void): ContextMenuItem[] {
+    const allFolders = emails.length > 0 ? folders.filter(f => emails.some(e => e.folderId !== f.id)) : folders
+    return [
+        {
+            type: 'action',
+            label: 'Mark as Read',
+            icon: icon(BookOpen),
+            onClick: () => onMultiMarkEmailRead(emails, true),
+        },
+        {
+            type: 'action',
+            label: 'Mark as Unread',
+            icon: icon(MailOpen),
+            onClick: () => onMultiMarkEmailRead(emails, false),
+        },
+        { type: 'divider' },
+        {
+            type: 'action',
+            label: 'Archive',
+            icon: icon(Archive),
+            onClick: () => console.log('archive', emails.map(e => e.id)),
+        },
+        {
+            type: 'submenu',
+            label: 'Move to',
+            icon: icon(FolderInput),
+            items: allFolders.map((f: Folder) => ({
+                type: 'action' as const,
+                label: f.label,
+                icon: icon(folderIconMap[f.icon]),
+                onClick: () => console.log('move', emails.map(e => e.id), 'to', f.id),
+            })),
+        },
+        { type: 'divider' },
+        {
+            type: 'action',
+            label: 'Move to Trash',
+            icon: icon(Trash2),
+            danger: true,
+            onClick: () => console.log('trash', emails.map(e => e.id)),
+        },
+    ]
+}
+
 export function useEmailContextMenuItems(email: EmailListItem, folders: Folder[], onMarkEmailRead: (email: EmailListItem, isRead: boolean) => void, onReply: (email: EmailListItem) => void, onForward: (email: EmailListItem) => void): ContextMenuItem[] {
     return [
         email.isRead

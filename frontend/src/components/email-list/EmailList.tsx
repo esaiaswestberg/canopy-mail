@@ -1,25 +1,58 @@
 import { List, AutoSizer, ListRowProps } from 'react-virtualized'
 import 'react-virtualized/styles.css'
+import { useRef } from 'react'
 import { EmailListItem as EmailListItemType, Folder } from '../../types/mail'
 import EmailListHeader from './EmailListHeader'
 import EmailListItem from './EmailListItem'
+import { useMultiEmailContextMenuItems } from '../../hooks/useContextMenuItems'
 import './EmailList.css'
 
 interface EmailListProps {
     folder: Folder
     folders: Folder[]
     emails: (EmailListItemType | null)[]
-    selectedEmailId: string | null
-    onSelectEmail: (id: string) => void
+    selectedEmailIds: Set<string>
+    onSelectionChange: (ids: Set<string>) => void
     onLoadMore: (startIndex: number, stopIndex: number) => void
     onMarkEmailRead: (email: EmailListItemType, isRead: boolean) => void
+    onMultiMarkEmailRead: (emails: EmailListItemType[], isRead: boolean) => void
     onReply: (email: EmailListItemType) => void
     onForward: (email: EmailListItemType) => void
 }
 
 const ROW_HEIGHT = 80
 
-export default function EmailList({ folder, folders, emails, selectedEmailId, onSelectEmail, onLoadMore, onMarkEmailRead, onReply, onForward }: EmailListProps) {
+export default function EmailList({ folder, folders, emails, selectedEmailIds, onSelectionChange, onLoadMore, onMarkEmailRead, onMultiMarkEmailRead, onReply, onForward }: EmailListProps) {
+    const lastClickedIndexRef = useRef<number | null>(null)
+
+    const selectedEmailsList = emails.filter(e => e && selectedEmailIds.has(e.id)) as EmailListItemType[]
+    const multiSelectMenuItems = useMultiEmailContextMenuItems(selectedEmailsList, folders, onMultiMarkEmailRead)
+
+    function handleEmailClick(index: number, emailId: string, e: React.MouseEvent) {
+        if (e.shiftKey && lastClickedIndexRef.current !== null) {
+            const start = Math.min(lastClickedIndexRef.current, index)
+            const end = Math.max(lastClickedIndexRef.current, index)
+            const rangeIds = new Set<string>()
+            for (let i = start; i <= end; i++) {
+                const item = emails[i]
+                if (item) rangeIds.add(item.id)
+            }
+            onSelectionChange(rangeIds)
+        } else if (e.ctrlKey || e.metaKey) {
+            const next = new Set(selectedEmailIds)
+            if (next.has(emailId)) {
+                next.delete(emailId)
+            } else {
+                next.add(emailId)
+            }
+            onSelectionChange(next)
+            lastClickedIndexRef.current = index
+        } else {
+            onSelectionChange(new Set([emailId]))
+            lastClickedIndexRef.current = index
+        }
+    }
+
     function rowRenderer({ index, key, style }: ListRowProps) {
         const email = emails[index]
         if (!email) {
@@ -30,11 +63,13 @@ export default function EmailList({ folder, folders, emails, selectedEmailId, on
                 <EmailListItem
                     email={email}
                     folders={folders}
-                    isSelected={email.id === selectedEmailId}
-                    onClick={() => onSelectEmail(email.id)}
+                    isSelected={selectedEmailIds.has(email.id)}
+                    onClick={(e) => handleEmailClick(index, email.id, e)}
+                    onSingleSelect={() => onSelectionChange(new Set([email.id]))}
                     onMarkEmailRead={onMarkEmailRead}
                     onReply={onReply}
                     onForward={onForward}
+                    multiSelectMenuItems={selectedEmailIds.size > 1 ? multiSelectMenuItems : undefined}
                 />
             </div>
         )
